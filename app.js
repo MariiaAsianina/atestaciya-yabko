@@ -1,4 +1,6 @@
 const THR = {'Менеджер з продажів':65,'Спеціаліст з продажів':65,'Експерт (сайт)':70,'Експерт + (сайт)':80};
+const POS_LEVEL = {'Спеціаліст з продажів':1,'Менеджер з продажів':2,'Експерт (сайт)':3,'Експерт + (сайт)':4};
+const RES_LEVEL = {specialist:1, manager:2, expert:3, expert_plus:4};
 const C = ['#4b8cf5','#7b5fe4','#26c6a0','#f5c842','#f07070','#38bdf8','#a78bfa','#fb923c'];
 const GR = {color:'rgba(255,255,255,.06)'};
 const TK = {color:'#9a9aa2',font:{size:11}};
@@ -32,7 +34,7 @@ async function init() {
     TESTS = tests;
   } catch(e) { console.error('Decompress error:', e); ALL = []; }
   document.getElementById('loading').style.display = 'none';
-  document.getElementById('meta').textContent = 'Атестація Літо 2026 · ' + ALL.length + ' співробітників';
+  document.getElementById('meta').textContent = 'Атестація Літо 2026 · ' + ALL.length + ' співробітників · Оновлено: ' + DATA_UPDATED;
   buildFilters();
   applyFilters();
 }
@@ -101,6 +103,14 @@ function kpiCard(v, label, sub, color) {
 function avg(arr) { return arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : null; }
 function sum(arr) { return arr.reduce((a,b)=>a+b,0); }
 
+function careerChange(d) {
+  const posLvl = POS_LEVEL[d.position], resLvl = RES_LEVEL[d.result];
+  if (posLvl == null || resLvl == null) return null;
+  if (resLvl > posLvl) return 'up';
+  if (resLvl < posLvl) return 'down';
+  return 'same';
+}
+
 function renderKPICards() {
   const sc = FIL.map(d=>d.totalScore).filter(v=>v!=null);
   const avgSc = sc.length ? +avg(sc).toFixed(1) : '—';
@@ -117,6 +127,15 @@ function renderKPICards() {
     kpiCard(FIL.filter(d=>d.result==='expert').length, '🔵 Експерт', '70–79 балів', '#4b8cf5') +
     kpiCard(warn, '🟡 Менеджер', '65–69 балів', '#f5c842') +
     kpiCard(ten.length ? Math.round(avg(ten)) : '—', 'Сер. стаж', 'місяців', '#7b5fe4');
+
+  const changes = FIL.map(careerChange);
+  const up = changes.filter(c=>c==='up').length;
+  const down = changes.filter(c=>c==='down').length;
+  const same = changes.filter(c=>c==='same').length;
+  document.getElementById('d-career').innerHTML =
+    kpiCard(up, '⬆ Підвищення посади', 'за результатами атестації', '#34d399') +
+    kpiCard(down, '⬇ Пониження посади', 'за результатами атестації', '#f07070') +
+    kpiCard(same, '➡ Підтвердження посади', 'за результатами атестації', '#9a9aa2');
 }
 
 /* ─── TABLES ─── */
@@ -883,7 +902,10 @@ function showDiff(nd, fn) {
 function confirmUpd() {
   if (!pendingData) return;
   ALL=pendingData.data;
-  document.getElementById('meta').textContent='Атестація Літо 2026 · '+ALL.length+' співробітників';
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const updNow = pad(now.getDate())+'.'+pad(now.getMonth()+1)+'.'+now.getFullYear()+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+  document.getElementById('meta').textContent='Атестація Літо 2026 · '+ALL.length+' співробітників · Оновлено: '+updNow;
   pendingData=null;
   document.getElementById('diff-ov').classList.remove('on');
   buildFilters(); applyFilters();
