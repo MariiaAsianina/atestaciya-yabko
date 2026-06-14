@@ -1,0 +1,20 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies (якщо колись з'являться)
+node_modules/
+
+# Тимчасові файли
+*.tmp
+*.bak
+*.zip
