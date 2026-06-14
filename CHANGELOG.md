@@ -54,3 +54,4 @@
 - 14.06.2026 18:19 · MariiaAsianina · Оновити дані атестації
 - 14.06.2026 18:31 · MariiaAsianina · Виправити часовий пояс у DATA_UPDATED (Europe/Kyiv)
 - 14.06.2026 18:35 · MariiaAsianina · Генерувати План атестації з Excel (PLAN_SEED)
+- 14.06.2026 18:39 · MariiaAsianina · Прибрати кнопки Історія змін та Експорт CSV, перейменувати Оновити .xlsx
