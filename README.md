@@ -51,3 +51,90 @@ npx serve .
 ## Публікація
 
 Дивись [DEPLOY.md](DEPLOY.md) — покрокова інструкція для GitHub Pages, Netlify та Vercel.
+
+## Робота з Git
+
+### 1. Створити репозиторій на GitHub
+
+1. Зайдіть на [github.com](https://github.com) → **New repository**.
+2. Введіть назву (наприклад, `jabko-atestacia`), залиште "Public" або "Private".
+3. **Не** додавайте README/.gitignore/license (у нас вони вже є) → **Create repository**.
+4. GitHub покаже адресу репозиторію, наприклад:
+   `https://github.com/<ваш-логін>/jabko-atestacia.git`
+
+### 2. Підключити локальний проєкт
+
+У папці проєкту (де вже зроблено `git init` і перший commit):
+
+```bash
+git remote add origin https://github.com/<ваш-логін>/jabko-atestacia.git
+git branch -M main
+git push -u origin main
+```
+
+### 3. Робити commit після кожної зміни
+
+```bash
+git add -A
+git commit -m "Короткий опис зміни"
+git push
+```
+
+- `git add -A` — додає всі змінені/нові файли.
+- `git commit -m "..."` — фіксує зміни локально з повідомленням.
+- `git push` — надсилає коміти на GitHub.
+
+### 4. Переглянути історію змін
+
+```bash
+git log --oneline           # короткий список комітів
+git log                      # детальна історія
+git show <commit-hash>       # що змінилось у конкретному коміті
+git diff                     # незакомічені зміни в робочій директорії
+```
+
+### 5. Повернутись до попередньої версії
+
+**Подивитись файл зі старого коміту (без втрати поточних змін):**
+```bash
+git show <commit-hash>:index.html
+```
+
+**Повністю відкотити проєкт до конкретного коміту (обережно — перезапише файли):**
+```bash
+git checkout <commit-hash> -- .
+git commit -m "Відкат до версії <commit-hash>"
+```
+
+**Скасувати останній commit, але зберегти зміни у файлах:**
+```bash
+git reset --soft HEAD~1
+```
+
+**Жорсткий відкат (видаляє незакомічені зміни — використовувати з обережністю):**
+```bash
+git reset --hard <commit-hash>
+```
+
+## Відновлення після помилки
+
+Якщо щось зламалось і потрібно повернути робочу версію:
+
+1. Подивіться список комітів і знайдіть останній робочий:
+   ```bash
+   git log --oneline
+   ```
+2. Скопіюйте файли з того коміту в поточну директорію:
+   ```bash
+   git checkout <commit-hash> -- index.html styles.css app.js data.js
+   ```
+3. Перевірте сайт локально (`python3 -m http.server 8080`).
+4. Якщо все працює — закомітьте відновлення:
+   ```bash
+   git add -A
+   git commit -m "Відновлення робочої версії з <commit-hash>"
+   git push
+   ```
+
+Якщо проєкт вже опубліковано через GitHub Pages/Netlify — після `git push`
+сайт оновиться автоматично протягом 1–2 хвилин.

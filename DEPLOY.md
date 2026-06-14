@@ -13,15 +13,35 @@
 ├── styles.css
 ├── app.js
 ├── data.js
-└── DEPLOY.md   (можна не публікувати, лише для довідки)
+├── .gitignore
+├── README.md
+├── CHANGELOG.md
+├── DEPLOY.md
+└── .github/workflows/pages.yml   (автодеплой на GitHub Pages)
 ```
 
-Просто завантажте ці 4 файли (index.html, styles.css, app.js, data.js) в один каталог
-на обраний хостинг — без додаткових налаштувань, build-кроків чи серверної частини.
+Для перегляду сайту достатньо 4 файлів (index.html, styles.css, app.js, data.js) —
+решта файлів (README, CHANGELOG, workflow) для зручності розробки/публікації
+і не впливають на роботу сайту.
 
 ---
 
 ## Варіант 1: GitHub Pages
+
+### A. Автоматична публікація через GitHub Actions (рекомендовано)
+
+У проєкті вже є готовий workflow `.github/workflows/pages.yml`, який автоматично
+публікує сайт при кожному `git push` у гілку `main`.
+
+1. Створіть репозиторій на GitHub і запуште проєкт (див. README.md → "Робота з Git").
+2. У репозиторії перейдіть у **Settings → Pages**.
+3. У розділі **Source** оберіть **GitHub Actions** (не "Deploy from a branch").
+4. Зробіть будь-який push у `main` — workflow запуститься автоматично
+   (вкладка **Actions** покаже прогрес).
+5. Через 1–2 хвилини сайт буде доступний за адресою:
+   `https://<ваш-логін>.github.io/<репозиторій>/`
+
+### B. Класичний спосіб (без Actions)
 
 1. Створіть новий репозиторій на GitHub (наприклад, `jabko-atestacia`).
 2. Завантажте туди файли `index.html`, `styles.css`, `app.js`, `data.js`
