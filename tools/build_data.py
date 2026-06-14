@@ -308,6 +308,53 @@ def parse_review(wb):
         }
     return out
 
+def parse_plan(wb):
+    if 'План проведення атестації' not in wb.sheetnames:
+        return []
+    rows = sheet_rows(wb['План проведення атестації'])
+
+    def fmt_date(v):
+        if v is None:
+            return ''
+        if isinstance(v, datetime):
+            return v.strftime('%d.%m.%Y')
+        s = str(v).strip()
+        if re.match(r'^\d{4}-\d{2}-\d{2}', s):
+            try:
+                return datetime.fromisoformat(s[:10]).strftime('%d.%m.%Y')
+            except ValueError:
+                pass
+        return s[:10]
+
+    hi, ci = -1, -1
+    for i in range(min(5, len(rows))):
+        row = rows[i] or []
+        for idx, c in enumerate(row):
+            if str(c or '').strip() == 'Етап':
+                hi, ci = i, idx
+                break
+        if hi >= 0:
+            break
+    if hi < 0:
+        return []
+
+    out = []
+    for i in range(hi + 1, len(rows)):
+        r = rows[i]
+        s = str(r[ci] or '').strip() if ci < len(r) else ''
+        if not s:
+            continue
+        cell = lambda off: r[ci + off] if ci + off < len(r) else None
+        out.append({
+            'stage': s,
+            'owner': str(cell(1) or '').strip(),
+            'start': fmt_date(cell(2)),
+            'deadline': fmt_date(cell(3)),
+            'status': str(cell(4) or '').strip(),
+            'comment': str(cell(5) or '').strip(),
+        })
+    return out
+
 def main():
     if len(sys.argv) != 2:
         print('Usage: build_data.py <path-to-xlsx>')
@@ -321,6 +368,7 @@ def main():
     inbound = parse_inbound(wb)
     basket = parse_basket(wb)
     review = parse_review(wb)
+    plan = parse_plan(wb)
 
     merged = enrich(general)
     for rec in merged:
@@ -346,6 +394,13 @@ def main():
     src = open(data_js_path, encoding='utf-8').read()
     src = re.sub(r"const DATA_UPDATED = '[^']*';", f"const DATA_UPDATED = '{now}';", src)
     src = re.sub(r"const SEED_B64 = '[^']*';", f"const SEED_B64 = '{seed_b64}';", src)
+
+    if plan:
+        plan_json = json.dumps(plan, ensure_ascii=False, separators=(',', ':'))
+        src = re.sub(r"const PLAN_SEED = \[.*?\];", f"const PLAN_SEED = {plan_json};", src, flags=re.DOTALL)
+        print(f'PLAN_SEED updated: {len(plan)} stages', file=sys.stderr)
+    else:
+        print('No "План проведення атестації" sheet found - PLAN_SEED unchanged', file=sys.stderr)
 
     open(data_js_path, 'w', encoding='utf-8').write(src)
     print(f'data.js updated. DATA_UPDATED={now}, SEED_B64 length={len(seed_b64)}', file=sys.stderr)
