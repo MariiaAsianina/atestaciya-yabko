@@ -90,13 +90,15 @@ function getCKed(id) { return [...document.querySelectorAll('#'+id+' input:check
 function applyFilters() {
   const q = document.getElementById('fsearch').value.toLowerCase();
   const sup = getCKed('f-sup'), pos = getCKed('f-pos');
-  const res = [...document.querySelectorAll('#sb input[value=expert_plus],#sb input[value=expert],#sb input[value=manager],#sb input[value=specialist],#sb input[value=none]')]
+  const res = [...document.querySelectorAll('#sb input[value=expert_plus],#sb input[value=expert],#sb input[value=manager],#sb input[value=specialist]')]
     .filter(e=>e.checked).map(e=>e.value);
+  const car = getCKed('f-career');
   FIL = ALL.filter(d =>
     (!q || d.name.toLowerCase().includes(q)) &&
     sup.includes(d.supervisor||'—') &&
     pos.includes(d.position||'—') &&
-    res.includes(d.result)
+    res.includes(d.result) &&
+    car.includes(careerChange(d))
   );
   Object.keys(TP).forEach(k => TP[k]=1);
   renderAll();
