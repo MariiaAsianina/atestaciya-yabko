@@ -18,3 +18,9 @@ node_modules/
 *.tmp
 *.bak
 *.zip
+
+# Збірка для Netlify (генерується автоматично tools/netlify_build.sh)
+/publish/
+
+# Тимчасові файли Excel (заблоковані відкритим Excel)
+data/~$*

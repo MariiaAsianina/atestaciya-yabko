@@ -12,7 +12,14 @@
 ├── index.html
 ├── styles.css
 ├── app.js
-├── data.js
+├── data.js                        (генерується з data/*.xlsx)
+├── data/
+│   └── Атестація Літо 2026.xlsx   (актуальний файл з даними атестації)
+├── tools/
+│   ├── build_data.py              (генерує data.js з Excel)
+│   ├── netlify_build.sh           (build-команда для Netlify)
+│   └── requirements.txt
+├── netlify.toml                   (build command + publish dir для Netlify)
 ├── .gitignore
 ├── README.md
 ├── CHANGELOG.md
@@ -21,8 +28,11 @@
 ```
 
 Для перегляду сайту достатньо 4 файлів (index.html, styles.css, app.js, data.js) —
-решта файлів (README, CHANGELOG, workflow) для зручності розробки/публікації
-і не впливають на роботу сайту.
+решта файлів для зручності розробки/публікації й автоматичної генерації
+даних і не впливають на роботу сайту напряму.
+
+`publish/` — папка, яку генерує build-скрипт (`tools/netlify_build.sh`),
+у git вона не зберігається (`.gitignore`).
 
 ---
 
@@ -63,21 +73,34 @@
 
 ---
 
-## Варіант 2: Netlify
+## Варіант 2: Netlify (рекомендовано — автоматичний build з GitHub)
 
-**Спосіб A — без git (drag & drop):**
-1. Зайдіть на [app.netlify.com](https://app.netlify.com) і увійдіть/зареєструйтесь.
-2. На головній сторінці є зона "Drag and drop your site output folder here" —
-   перетягніть туди папку з файлами `index.html`, `styles.css`, `app.js`, `data.js`.
-3. Netlify автоматично опублікує сайт і видасть посилання вигляду
-   `https://<назва>.netlify.app`.
+Проєкт має готовий `netlify.toml`:
+```toml
+[build]
+  command = "bash tools/netlify_build.sh"
+  publish = "publish"
+```
+Build-команда сама встановлює `openpyxl`, генерує `data.js` з Excel-файлу
+в `data/` і збирає `publish/` (index.html, styles.css, app.js, data.js).
+Тобто **достатньо запушити зміни в GitHub — Netlify сам перегенерує дані й опублікує сайт**.
 
-**Спосіб B — через GitHub:**
-1. Завантажте файли в репозиторій на GitHub (як у Варіанті 1, кроки 1–2).
-2. На Netlify натисніть **Add new site → Import an existing project**.
-3. Підключіть GitHub-репозиторій.
-4. Build command залиште порожнім, Publish directory — `.` (корінь).
-5. Натисніть **Deploy**.
+**Налаштування (один раз):**
+1. Завантажте репозиторій на GitHub (якщо ще не зроблено) — див. README.md → "Робота з Git".
+2. Зайдіть на [app.netlify.com](https://app.netlify.com) і увійдіть/зареєструйтесь.
+3. **Add new site → Import an existing project** → підключіть GitHub-репозиторій.
+4. Netlify сам прочитає `netlify.toml` (build command і publish dir підставляться автоматично).
+   Якщо запитає вручну: Build command = `bash tools/netlify_build.sh`, Publish directory = `publish`.
+5. Натисніть **Deploy site**. Netlify видасть посилання вигляду `https://<назва>.netlify.app`.
+
+Після цього кожен `git push` (наприклад, у гілку `production`, якщо так
+налаштовано "Production branch" у Netlify) автоматично запускає build і
+оновлює сайт для всіх — див. розділ "Оновлення даних атестації" в README.md.
+
+**Альтернатива — без git (drag & drop, разовий тест):**
+1. Локально виконайте `bash tools/netlify_build.sh` — створиться папка `publish/`.
+2. На [app.netlify.com/drop](https://app.netlify.com/drop) перетягніть папку `publish/`.
+3. Цей спосіб не автооновлюється — для постійної роботи використовуйте підключення через GitHub (вище).
 
 ---
 

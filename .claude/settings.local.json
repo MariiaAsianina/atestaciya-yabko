@@ -18,7 +18,8 @@
       "Bash(awk '/SEED_B64/{found=1} found{print substr\\($0,1,50\\); if\\(/;/\\) exit}' /Users/office/Downloads/files/data.js)",
       "Bash(pip3 install *)",
       "Bash(cp data.js /tmp/data.js.bak)",
-      "Bash(python3 tools/build_data.py \"/Users/office/Downloads/Атестація Літо 2026 \\(6\\).xlsx\")"
+      "Bash(python3 tools/build_data.py \"/Users/office/Downloads/Атестація Літо 2026 \\(6\\).xlsx\")",
+      "Bash(mkdir -p /Users/office/Downloads/files/data && cp \"/Users/office/Downloads/Атестація Літо 2026 \\(6\\).xlsx\" \"/Users/office/Downloads/files/data/Атестація Літо 2026.xlsx\" && ls -la /Users/office/Downloads/files/data/)"
     ]
   }
 }

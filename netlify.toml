@@ -1,0 +1,6 @@
+[build]
+  command = "bash tools/netlify_build.sh"
+  publish = "publish"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
