@@ -10,7 +10,12 @@
       "Bash(git config *)",
       "Bash(git branch *)",
       "Bash(git tag *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8080/index.html)",
+      "Read(//private/tmp/**)",
+      "Bash(mkdir -p /Users/office/Downloads/files/.claude && cat /Users/office/Downloads/files/.claude/launch.json 2>/dev/null)",
+      "Bash(grep -o \"SEED_B64\\\\s*=.\\\\{0,80\\\\}\" /Users/office/Downloads/files/data.js)",
+      "Bash(awk '/SEED_B64/{found=1} found{print substr\\($0,1,50\\); if\\(/;/\\) exit}' /Users/office/Downloads/files/data.js)"
     ]
   }
 }
