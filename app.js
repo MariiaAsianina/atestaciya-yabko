@@ -1,3 +1,21 @@
+const APP_VERSION = 'v1.2';
+const APP_VERSION_DATE = '14.06.2026';
+const RELEASES = [
+  { ver: 'v1.2', date: '14.06.2026', notes: [
+    'Гілки production/development та автопублікація GitHub Pages з production.',
+    'Автозапис історії комітів у CHANGELOG.md.',
+    'Система релізів (теги v1.0, v1.1, v1.2…).',
+    'Відображення версії сайту та кнопка «Історія змін».'
+  ]},
+  { ver: 'v1.1', date: '14.06.2026', notes: [
+    'Картки підвищення/пониження/підтвердження посади за результатами атестації.',
+    'Дата і час останнього оновлення даних у топбарі.'
+  ]},
+  { ver: 'v1.0', date: '14.06.2026', notes: [
+    'Початкова версія дашборду атестації (графіки, таблиці, фільтри, експорт CSV, імпорт .xlsx).'
+  ]}
+];
+
 const THR = {'Менеджер з продажів':65,'Спеціаліст з продажів':65,'Експерт (сайт)':70,'Експерт + (сайт)':80};
 const POS_LEVEL = {'Спеціаліст з продажів':1,'Менеджер з продажів':2,'Експерт (сайт)':3,'Експерт + (сайт)':4};
 const RES_LEVEL = {specialist:1, manager:2, expert:3, expert_plus:4};
@@ -35,6 +53,7 @@ async function init() {
   } catch(e) { console.error('Decompress error:', e); ALL = []; }
   document.getElementById('loading').style.display = 'none';
   document.getElementById('meta').textContent = 'Атестація Літо 2026 · ' + ALL.length + ' співробітників · Оновлено: ' + DATA_UPDATED;
+  document.getElementById('ver').textContent = 'Версія ' + APP_VERSION + ' · оновлено ' + APP_VERSION_DATE;
   buildFilters();
   applyFilters();
 }
@@ -909,6 +928,18 @@ function confirmUpd() {
   pendingData=null;
   document.getElementById('diff-ov').classList.remove('on');
   buildFilters(); applyFilters();
+}
+
+/* ─── CHANGELOG ─── */
+function openChangelog() {
+  document.getElementById('cl-body').innerHTML =
+    '<h2 style="margin-bottom:14px">📜 Історія змін</h2>'
+    + RELEASES.map(r =>
+        '<div class="cl-rel"><h3>'+xss(r.ver)+'</h3>'
+        + '<div class="cl-date">'+xss(r.date)+'</div>'
+        + '<ul>'+r.notes.map(n=>'<li>'+xss(n)+'</li>').join('')+'</ul></div>'
+      ).join('');
+  document.getElementById('cl-ov').classList.add('on');
 }
 
 /* ─── EXPORT ─── */

@@ -52,6 +52,86 @@ npx serve .
 
 Дивись [DEPLOY.md](DEPLOY.md) — покрокова інструкція для GitHub Pages, Netlify та Vercel.
 
+## Гілки та релізи
+
+Проєкт використовує дві основні гілки:
+
+- **`development`** — тут виконуються всі поточні зміни.
+- **`production`** — завжди містить стабільну версію сайту.
+  Тільки з цієї гілки автоматично публікується GitHub Pages
+  (workflow `.github/workflows/pages.yml`).
+
+Кожна стабільна версія додатково позначається тегом релізу: `v1.0`, `v1.1`, `v1.2`, ...
+Поточна версія вказана у [VERSION.md](VERSION.md) і відображається на сайті
+в топбарі ("Версія vX.Y · оновлено ДД.ММ.РРРР"), а кнопка
+**"📜 Історія змін"** відкриває останні записи з CHANGELOG.md.
+
+### Перенесення змін з development у production
+
+1. Переконайтесь, що `development` протестовано і працює:
+   ```bash
+   git checkout development
+   git pull
+   ```
+2. Перейдіть у `production` і влийте зміни:
+   ```bash
+   git checkout production
+   git pull
+   git merge development
+   ```
+3. Оновіть [VERSION.md](VERSION.md) — номер версії та дату.
+4. Закомітьте і запуште:
+   ```bash
+   git add -A
+   git commit -m "Реліз vX.Y"
+   git push
+   ```
+5. Створіть тег релізу і відправте його:
+   ```bash
+   git tag -a vX.Y -m "Опис релізу vX.Y"
+   git push origin vX.Y
+   ```
+6. Push у `production` автоматично запустить публікацію на GitHub Pages.
+
+### Відкат production до попереднього релізу
+
+**Подивитись список релізів:**
+```bash
+git tag -l
+```
+
+**Відкотити production до конкретного релізу (наприклад, v1.1):**
+```bash
+git checkout production
+git reset --hard v1.1
+git push --force origin production
+```
+
+⚠️ `--force` перезаписує історію `production` на GitHub — використовуйте,
+коли впевнені, що поточна версія production зламана і потрібно повернути
+саме v1.1. Після цього GitHub Pages автоматично перепублікує сайт версії v1.1.
+
+**Альтернатива без перезапису історії (безпечніше):** створити новий комміт,
+який повертає файли до стану релізу:
+```bash
+git checkout production
+git checkout v1.1 -- .
+git add -A
+git commit -m "Відкат до v1.1"
+git push
+```
+
+## Автозапис CHANGELOG.md
+
+У репозиторії налаштовано git-хук `.githooks/post-commit`, який після кожного
+коміту автоматично дописує в `CHANGELOG.md` рядок із датою, автором та описом
+коміту. Хук активується командою (виконується один раз на машині):
+```bash
+git config core.hooksPath .githooks
+```
+Записи виду `backup-YYYY-MM-DD-HH-MM` (службові резервні коміти) у CHANGELOG
+не потрапляють.
+
 ## Робота з Git
 
 ### 1. Створити репозиторій на GitHub

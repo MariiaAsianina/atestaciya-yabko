@@ -5,7 +5,9 @@
       "Bash(git commit *)",
       "Bash(curl -s http://localhost:8080/index.html)",
       "Bash(curl -s http://localhost:8080/app.js)",
-      "Bash(curl -s http://localhost:8080/data.js)"
+      "Bash(curl -s http://localhost:8080/data.js)",
+      "Bash(chmod +x .githooks/post-commit)",
+      "Bash(git config *)"
     ]
   }
 }

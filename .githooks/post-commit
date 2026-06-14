@@ -1,0 +1,30 @@
+#!/bin/bash
+# Автоматично додає запис у CHANGELOG.md після кожного коміту:
+# дата, автор та опис змін. Захист від рекурсії через env-прапорець.
+
+if [ -n "$CHANGELOG_HOOK_RUNNING" ]; then
+  exit 0
+fi
+
+# Не логувати самі коміти-бекапи у CHANGELOG (вони службові)
+SUBJECT=$(git log -1 --format=%s)
+case "$SUBJECT" in
+  backup-*) exit 0 ;;
+esac
+
+DATE=$(git log -1 --format=%ad --date=format:'%d.%m.%Y %H:%M')
+AUTHOR=$(git log -1 --format=%an)
+HASH=$(git log -1 --format=%h)
+
+ENTRY="- ${DATE} · ${AUTHOR} · ${SUBJECT} (${HASH})"
+
+# Не додавати дублікат, якщо вже є рядок з цим хешем
+if grep -qF "(${HASH})" CHANGELOG.md 2>/dev/null; then
+  exit 0
+fi
+
+echo "${ENTRY}" >> CHANGELOG.md
+
+export CHANGELOG_HOOK_RUNNING=1
+git add CHANGELOG.md
+git commit --amend --no-edit --no-verify -q

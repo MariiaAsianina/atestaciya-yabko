@@ -16,6 +16,8 @@
 <div id="topbar">
   <div class="logo">Jabko <span>Атестація</span><small>Літо 2026</small></div>
   <div id="meta">завантаження…</div>
+  <div id="ver" class="ver-tag"></div>
+  <button class="btn btn-g" id="btn-changelog" onclick="openChangelog()">📜 Історія змін</button>
   <div class="sp"></div>
   <button class="btn btn-g" style="margin-right:8px" onclick="exportCSV()">⬇ Експорт CSV</button>
   <button class="btn btn-p" onclick="document.getElementById('fi').click()">⬆ Оновити .xlsx</button>
@@ -274,6 +276,10 @@
 <!-- DIFF MODAL -->
 <div class="ov" id="diff-ov" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="mdl"><button class="mdlx" onclick="document.getElementById('diff-ov').classList.remove('on')">✕</button><div id="diff-body"></div></div>
+</div>
+<!-- CHANGELOG MODAL -->
+<div class="ov" id="cl-ov" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="mdl"><button class="mdlx" onclick="document.getElementById('cl-ov').classList.remove('on')">✕</button><div id="cl-body"></div></div>
 </div>
 
 </div>
