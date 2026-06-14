@@ -14,12 +14,11 @@ esac
 
 DATE=$(git log -1 --format=%ad --date=format:'%d.%m.%Y %H:%M')
 AUTHOR=$(git log -1 --format=%an)
-HASH=$(git log -1 --format=%h)
 
-ENTRY="- ${DATE} · ${AUTHOR} · ${SUBJECT} (${HASH})"
+ENTRY="- ${DATE} · ${AUTHOR} · ${SUBJECT}"
 
-# Не додавати дублікат, якщо вже є рядок з цим хешем
-if grep -qF "(${HASH})" CHANGELOG.md 2>/dev/null; then
+# Не додавати дублікат останнього запису (на випадок повторного запуску хука)
+if [ "$(tail -1 CHANGELOG.md 2>/dev/null)" = "${ENTRY}" ]; then
   exit 0
 fi
 
