@@ -11,6 +11,7 @@ TESTS_B64 and PLAN_SEED in data.js are left untouched.
 """
 import sys, json, zlib, base64, re
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import openpyxl
 
 SKIP_POS = {'Бали старі', 'Бали нові ', 'Бали нові'}
@@ -338,7 +339,7 @@ def main():
     compressed = zlib.compress(raw_json.encode('utf-8'), 9)
     seed_b64 = base64.b64encode(compressed).decode('ascii')
 
-    now = datetime.now().strftime('%d.%m.%Y %H:%M')
+    now = datetime.now(ZoneInfo('Europe/Kyiv')).strftime('%d.%m.%Y %H:%M')
 
     import os
     data_js_path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), '..', 'data.js')
