@@ -10,7 +10,17 @@
 </head>
 <body>
 
-<div id="app-root">
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">Jabko <span>Атестація</span><small>Літо 2026</small></div>
+    <p class="login-hint">Введіть пароль для доступу</p>
+    <input type="password" id="login-pass" class="finput" placeholder="Пароль" autocomplete="current-password" onkeydown="if(event.key==='Enter')checkLogin()">
+    <button class="btn btn-p" onclick="checkLogin()">Увійти</button>
+    <p id="login-error" class="login-error">Неправильний пароль</p>
+  </div>
+</div>
+
+<div id="app-root" style="display:none">
 <div id="loading"><div class="spinner"></div><p>Завантаження даних…</p></div>
 
 <div id="topbar">

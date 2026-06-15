@@ -10,6 +10,13 @@
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--t1);font-family:var(--ff);font-size:13px}
 
+#login-screen{height:100vh;display:flex;align-items:center;justify-content:center}
+.login-box{width:280px;display:flex;flex-direction:column;gap:12px;padding:28px;background:var(--s1);border:1px solid var(--br);border-radius:12px}
+.login-box .logo{text-align:center;margin-bottom:4px}
+.login-hint{font-size:12px;color:var(--t2);text-align:center}
+.login-error{font-size:12px;color:var(--re);text-align:center;display:none}
+.login-error.on{display:block}
+
 #topbar{height:52px;display:flex;align-items:center;gap:10px;padding:0 18px;background:var(--s1);border-bottom:1px solid var(--br);flex-shrink:0}
 .logo{font-size:16px;font-weight:800;letter-spacing:-.5px}.logo span{color:var(--ac)}
 .logo small{font-size:11px;font-weight:400;color:var(--t3);margin-left:6px}

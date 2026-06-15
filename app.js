@@ -1,3 +1,26 @@
+/* ─── AUTH ─── */
+const AUTH_HASH = '4a3c40466aa83029f67cd839ba4ea80251f41ae092ce8059dd92f6d53750a851';
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function unlockApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-root').style.display = '';
+  init();
+}
+async function checkLogin() {
+  const pass = document.getElementById('login-pass').value;
+  if (await sha256Hex(pass) === AUTH_HASH) {
+    sessionStorage.setItem('atest_auth', '1');
+    unlockApp();
+  } else {
+    document.getElementById('login-error').classList.add('on');
+  }
+}
+if (sessionStorage.getItem('atest_auth') === '1') unlockApp();
+else document.getElementById('login-pass').focus();
+
 const APP_VERSION = 'v1.2';
 const APP_VERSION_DATE = '14.06.2026';
 const RELEASES = [
@@ -961,5 +984,3 @@ function xss(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').re
 
 document.addEventListener('dragover',e=>e.preventDefault());
 document.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f&&(f.name.endsWith('.xlsx')||f.name.endsWith('.xls'))){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fi').files=dt.files;onFile(document.getElementById('fi'));}});
-
-init();
