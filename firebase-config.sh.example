@@ -1,0 +1,7 @@
+#!/bin/bash
+# Скопіюйте цей файл у firebase-config.sh (без .example) і заповніть своїми даними.
+# firebase-config.sh у git НЕ потрапляє (.gitignore) - там зберігається секретний ключ.
+
+export FIREBASE_STORAGE_BUCKET="ВАШ-ПРОЄКТ.appspot.com"
+export FIREBASE_FILE_PATH="Атестація Літо 2026.xlsx"
+export FIREBASE_CREDENTIALS_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/firebase-key.json"
