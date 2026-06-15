@@ -19,7 +19,18 @@
       "Bash(pip3 install *)",
       "Bash(cp data.js /tmp/data.js.bak)",
       "Bash(python3 tools/build_data.py \"/Users/office/Downloads/Атестація Літо 2026 \\(6\\).xlsx\")",
-      "Bash(mkdir -p /Users/office/Downloads/files/data && cp \"/Users/office/Downloads/Атестація Літо 2026 \\(6\\).xlsx\" \"/Users/office/Downloads/files/data/Атестація Літо 2026.xlsx\" && ls -la /Users/office/Downloads/files/data/)"
+      "Bash(mkdir -p /Users/office/Downloads/files/data && cp \"/Users/office/Downloads/Атестація Літо 2026 \\(6\\).xlsx\" \"/Users/office/Downloads/files/data/Атестація Літо 2026.xlsx\" && ls -la /Users/office/Downloads/files/data/)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(gh auth *)",
+      "Bash(curl -s https://atestaciya-yabko.netlify.app/data.js)",
+      "Bash(curl -s \"https://atestaciya-yabko.netlify.app/data.js?nocache=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
+      "Bash(curl -sI \"https://atestaciya-yabko.netlify.app/data.js\")",
+      "Bash(curl -s \"https://atestaciya-yabko.netlify.app/data.js\")",
+      "Bash(md5)",
+      "Bash(python3 tools/build_data.py \"data/Атестація Літо 2026.xlsx\")",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
