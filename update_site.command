@@ -5,24 +5,32 @@ cd "$(dirname "$0")"
 echo "=== Оновлення сайту атестації ==="
 echo
 
-# 1. Перевірити, що в data/ є рівно один .xlsx файл
-XLSX_FILES=$(find data -maxdepth 1 -iname '*.xlsx' ! -name '~$*')
-COUNT=$(echo "$XLSX_FILES" | grep -c . || true)
-
-if [ "$COUNT" -ne 1 ]; then
-  echo "ПОМИЛКА: у папці data/ має бути рівно один файл .xlsx, знайдено: $COUNT"
-  echo "$XLSX_FILES"
+# 0. Завантажити налаштування доступу до Firebase Storage
+if [ ! -f firebase-config.sh ]; then
+  echo "ПОМИЛКА: не знайдено файл firebase-config.sh."
+  echo "Скопіюйте firebase-config.sh.example у firebase-config.sh і заповніть"
+  echo "своїми даними (інструкція в README.md)."
   echo
-  echo "Видаліть зайві/старі файли .xlsx з папки data/ і спробуйте ще раз."
+  read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
+  exit 1
+fi
+source firebase-config.sh
+
+# 1. Встановити залежності та завантажити актуальний Excel з Firebase Storage
+echo "Завантаження актуального файлу з Firebase Storage..."
+python3 -m pip install --quiet -r tools/requirements.txt
+if ! python3 tools/fetch_excel.py; then
+  echo
+  echo "ПОМИЛКА: не вдалося завантажити Excel-файл з Firebase Storage (див. повідомлення вище)."
+  echo "Сайт НЕ оновлено, push не виконано."
   echo
   read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
   exit 1
 fi
 
-echo "Знайдено файл: $XLSX_FILES"
 echo
 
-# 2. Запустити build для перевірки Excel-файлу
+# 2. Запустити build для генерації даних
 echo "Перевірка та генерація даних..."
 if ! bash tools/netlify_build.sh; then
   echo
@@ -36,7 +44,7 @@ fi
 echo
 
 # 3. Commit і push, якщо є зміни
-git add data/ data.js CHANGELOG.md
+git add data.js CHANGELOG.md
 
 if git diff --cached --quiet; then
   echo "Змін немає — дані вже актуальні, оновлення не потрібне."

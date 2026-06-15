@@ -30,7 +30,10 @@
       "Bash(curl -s \"https://atestaciya-yabko.netlify.app/data.js\")",
       "Bash(md5)",
       "Bash(python3 tools/build_data.py \"data/Атестація Літо 2026.xlsx\")",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python3 -c ' *)",
+      "Read(//Users/office/Downloads/**)",
+      "Bash(xxd \"/Users/office/Downloads/гарантійні обміни травень 2026.xlsx\")"
     ]
   }
 }

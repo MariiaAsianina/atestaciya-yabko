@@ -22,5 +22,13 @@ node_modules/
 # Збірка для Netlify (генерується автоматично tools/netlify_build.sh)
 /publish/
 
+# Excel-файл атестації - тільки на Firebase Storage, не в git
+data/*.xlsx
+data/*.xls
+
 # Тимчасові файли Excel (заблоковані відкритим Excel)
 data/~$*
+
+# Секрети Firebase (локальний доступ до Storage)
+firebase-config.sh
+firebase-key.json
