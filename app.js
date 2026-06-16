@@ -624,6 +624,36 @@ function openEmp(id) {
 }
 
 /* ─── FILE UPLOAD ─── */
+const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1_bxhv7d-ID9GqY5vYVgdknC1G8RJ4yike6ODDN_4KRY/export?format=xlsx';
+
+async function refreshFromSheets() {
+  const btn = document.getElementById('btn-refresh');
+  btn.disabled = true;
+  btn.textContent = '⏳ Завантаження...';
+  try {
+    const resp = await fetch(SHEETS_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:true});
+    if (!wb.SheetNames.includes('Загальна')) throw new Error('Аркуш «Загальна» не знайдено');
+    const nd = parseXLSX(wb);
+    if (!nd.length) throw new Error('Дані не знайдено');
+    ALL = nd;
+    buildFilters();
+    applyFilters();
+    const now = new Date().toLocaleString('uk-UA', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const metaEl = document.getElementById('meta');
+    if (metaEl) metaEl.textContent = 'Атестація Літо 2026 · ' + ALL.length + ' співробітників · Оновлено: ' + now;
+    btn.textContent = '✅ Оновлено';
+    setTimeout(() => { btn.textContent = '🔄 Оновити дані'; btn.disabled = false; }, 2000);
+  } catch(err) {
+    console.error(err);
+    btn.textContent = '❌ Помилка';
+    setTimeout(() => { btn.textContent = '🔄 Оновити дані'; btn.disabled = false; }, 3000);
+    alert('Не вдалося оновити дані: ' + err.message + '\n\nПеревірте підключення до інтернету.');
+  }
+}
+
 function onFile(inp) {
   const f = inp.files[0]; if (!f) return;
   const reader = new FileReader();

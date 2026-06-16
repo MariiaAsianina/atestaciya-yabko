@@ -28,8 +28,7 @@
   <div id="meta">завантаження…</div>
   <div id="ver" class="ver-tag"></div>
   <div class="sp"></div>
-  <button class="btn btn-p" onclick="document.getElementById('fi').click()">⬆ Попередній перегляд</button>
-  <input type="file" id="fi" accept=".xlsx,.xls" style="display:none" onchange="onFile(this)">
+  <button class="btn btn-p" id="btn-refresh" onclick="refreshFromSheets()">🔄 Оновити дані</button>
 </div>
 
 <div id="wrap">
