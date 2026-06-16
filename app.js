@@ -47,14 +47,14 @@ const GR = {color:'rgba(255,255,255,.06)'};
 const TK = {color:'#9a9aa2',font:{size:11}};
 const TEST_LABELS = ['Новинки Берез.','Принтери','Whoop/Oura','Особл.техніка','Тренінг 2026','Гарантії'];
 
-let ALL=[], FIL=[], TESTS=[], PLAN=[...PLAN_SEED];
+let ALL=[], FIL=[], TESTS=[];
 let PP=25, activeTab='dash', pendingData=null;
 const TS = {
   general:{k:'totalScore',d:-1}, tests:{k:'testSum',d:-1}, qa:{k:'qaAvg',d:-1},
   chats:{k:'convChat',d:-1}, inbound:{k:'convInbound',d:-1}, orders:{k:'totalOrders',d:-1},
   kpi:{k:'kpiBal_kpi',d:-1}, review:{k:'reviewScoreOcinka',d:-1}, teams:{k:'avgScore',d:-1}
 };
-const TP = {general:1,tests:1,qa:1,chats:1,inbound:1,orders:1,kpi:1,review:1,teams:1};
+const TP = {general:1,tests:1,qa:1,chats:1,inbound:1,orders:1,kpi:1,teams:1};
 const CI = {};
 
 /* ─── INIT ─── */
@@ -135,7 +135,7 @@ function resetFilters() {
 /* ─── RENDER ALL ─── */
 function renderAll() {
   renderKPICards();
-  ['general','tests','qa','chats','inbound','orders','kpi','review'].forEach(t => renderTable(t));
+  ['general','tests','qa','chats','inbound','orders','kpi'].forEach(t => renderTable(t));
   renderTeamsTab();
   renderCharts(activeTab);
 }
@@ -191,7 +191,6 @@ const TBL = {
   inbound:['name','supervisor','position','inboundCalls','totalInbound','callsPerDay','ordersFromCalls','convInbound','balInbound','balConvInbound'],
   orders: ['name','supervisor','position','totalOrders','successOrders','successPct','cancelPct','ordFromCalls','ordFromChats','scoreSuccess','scoreQty','totalScore','result'],
   kpi:    ['name','supervisor','position','kpiGlass','kpiBlackSide','kpiBlocks','kpiCorning','kpiCase','kpiDG','kpiDGPremium','kpiBal_kpi'],
-  review: ['name','supervisor','position','reviewStrength','reviewRecommendation','reviewRelations','reviewDiscipline','reviewInitiative','reviewScorePts','reviewScoreOcinka'],
 };
 
 const BAR = {
@@ -215,7 +214,6 @@ const BAR = {
   kpiGlass:{m:50,c:'#38bdf8'},kpiBlackSide:{m:70,c:'#a78bfa'},kpiBlocks:{m:30,c:'#fb923c'},
   kpiCorning:{m:15,c:'#f5c842'},kpiCase:{m:30,c:'#26c6a0'},kpiDG:{m:30,c:'#4b8cf5'},
   kpiDGPremium:{m:7,c:'#f5c842'},
-  reviewScorePts:{m:30,c:'#7b5fe4'},reviewScoreOcinka:{m:10,c:'#7b5fe4'},
 };
 
 function renderTable(tab) {
@@ -244,7 +242,7 @@ function renderTable(tab) {
 }
 
 // Wire sort clicks
-['general','tests','qa','chats','inbound','orders','kpi','review'].forEach(tab => {
+['general','tests','qa','chats','inbound','orders','kpi'].forEach(tab => {
   document.querySelectorAll('#tbl-'+tab+' thead th[data-k]').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.k;
@@ -278,7 +276,7 @@ function renderCell(d, col) {
 
 function renderPg(tab, total, pg) {
   const pages = Math.ceil(total/PP);
-  let h = '<select class="ppsel" onchange="PP=+this.value;Object.keys(TP).forEach(k=>TP[k]=1);[\'general\',\'tests\',\'qa\',\'chats\',\'inbound\',\'orders\',\'kpi\',\'review\'].forEach(t=>renderTable(t));renderTeamsTab()">'
+  let h = '<select class="ppsel" onchange="PP=+this.value;Object.keys(TP).forEach(k=>TP[k]=1);[\'general\',\'tests\',\'qa\',\'chats\',\'inbound\',\'orders\',\'kpi\'].forEach(t=>renderTable(t));renderTeamsTab()">'
     + [25,50,100].map(n=>'<option'+(PP===n?' selected':'')+'>'+n+'</option>').join('') + '</select>';
   if (pages>1) {
     h += '<button class="pgb" onclick="goPg(\''+tab+'\','+( pg-1)+')" '+(pg<=1?'disabled':'')+'>‹</button>';
@@ -484,9 +482,7 @@ function renderCharts(tab) {
   else if (tab==='inbound') renderInbCharts();
   else if (tab==='orders')  renderOrdCharts();
   else if (tab==='kpi')     renderKPICharts();
-  else if (tab==='review')  renderRevCharts();
   else if (tab==='teams')   renderTeamsChart();
-  else if (tab==='plan')    renderPlan();
 }
 
 function renderDash() {
@@ -560,53 +556,6 @@ function renderKPICharts() {
   mk('c-kpi-all',{type:'bar',data:{labels:teams,datasets:kpiKeys.map((kp,i)=>({label:kp.l,data:teams.map(t=>{const v=FIL.filter(d=>(d.supervisor||'—')===t).map(d=>d[kp.k]).filter(x=>x!=null);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;}),backgroundColor:C[i]+'88',borderColor:C[i],borderWidth:1,borderRadius:2}))},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9a9aa2',font:{size:11}}}},scales:{x:{ticks:{...TK,maxRotation:20},grid:{display:false}},y:{ticks:TK,grid:GR,beginAtZero:true}}}});
 }
-function renderRevCharts() {
-  const rt=tAvg('reviewScoreOcinka'); barChart('c-rev-t',rt.map(e=>e[0]),rt.map(e=>e[1]),rt.map((_,i)=>C[i%C.length]),{max:10});
-  const recs={};FIL.forEach(d=>{if(d.reviewRecommendation){const k=d.reviewRecommendation.trim().substring(0,35);recs[k]=(recs[k]||0)+1;}});
-  const rs=Object.entries(recs).sort((a,b)=>b[1]-a[1]);
-  hBarChart('c-rev-rec',rs.map(e=>e[0]),rs.map(e=>e[1]),rs.map((_,i)=>C[i%C.length]));
-}
-
-function renderPlan() {
-  const sc = {
-    'Завершено':    {bg:'rgba(52,211,153,.1)', br:'#34d399',tx:'#34d399',ic:'✓'},
-    'В процесі':    {bg:'rgba(245,200,66,.1)', br:'#f5c842',tx:'#f5c842',ic:'◉'},
-    'Не розпочато': {bg:'rgba(90,100,128,.08)',br:'#5a6480',tx:'#5a6480',ic:'○'}
-  };
-  const done=PLAN.filter(p=>p.status==='Завершено').length;
-  const prog=PLAN.filter(p=>p.status==='В процесі').length;
-  const pend=PLAN.filter(p=>p.status==='Не розпочато').length;
-  const el = document.getElementById('plan-kpis');
-  if (el) el.innerHTML =
-    kpiCard(done,'Завершено','етапів','#34d399')+
-    kpiCard(prog,'В процесі','етапів','#f5c842')+
-    kpiCard(pend,'Не розпочато','етапів','#5a6480')+
-    kpiCard(PLAN.length,'Всього','етапів','#4b8cf5');
-
-  const tl = document.getElementById('plan-timeline');
-  if (!tl) return;
-  tl.innerHTML = '<div class="tl-wrap"><div class="tl-line"></div>'
-    + PLAN.map(p => {
-        const s = sc[p.status]||sc['Не розпочато'];
-        return '<div class="tl-item">'
-          +'<div class="tl-dot" style="border-color:'+s.br+';color:'+s.tx+'">'+s.ic+'</div>'
-          +'<div class="tl-card" style="border-left-color:'+s.br+'">'
-            +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'
-              +'<div style="flex:1;min-width:180px">'
-                +'<div class="tl-name">'+p.stage+'</div>'
-                +'<div class="tl-owner">👤 '+p.owner+'</div>'
-                +(p.comment?'<div class="tl-comment">💬 '+p.comment+'</div>':'')
-              +'</div>'
-              +'<div class="tl-right">'
-                +'<span class="tl-status" style="background:'+s.bg+';color:'+s.tx+';border-color:'+s.br+'">'+s.ic+' '+p.status+'</span>'
-                +'<div class="tl-date">📅 '+p.start+' → '+p.deadline+'</div>'
-              +'</div>'
-            +'</div>'
-          +'</div>'
-          +'</div>';
-      }).join('')
-    + '</div>';
-}
 
 /* ─── TAB SWITCH ─── */
 function goTab(btn) {
@@ -670,14 +619,7 @@ function openEmp(id) {
       +mRow('ДГ %',d.kpiDG,30,'#4b8cf5')+mRow('ДГ Преміум',d.kpiDGPremium,7,'#f5c842')
       +(d.kpiBal_kpi!=null?'<div style="margin-top:7px;font-size:12px;color:var(--t2)">Бал КПІ (таблиця): <b style="color:var(--ac);font-size:15px">'+d.kpiBal_kpi+'</b></div>':'')
     +'</div>'
-    +(d.reviewStrength?'<div class="msec"><h4>Відгук керівника</h4>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
-        +'<div class="ii"><div class="k">💪 Сильна сторона</div><div class="vv" style="font-size:12px">'+d.reviewStrength+'</div></div>'
-        +'<div class="ii"><div class="k">📌 Рекомендація</div><div class="vv" style="font-size:12px">'+d.reviewRecommendation+'</div></div>'
-      +'</div>'
-      +(d.reviewRelations?'<div class="ii" style="margin-bottom:8px"><div class="k">Відносини в колективі</div><div class="vv" style="font-size:11px;color:var(--t2)">'+d.reviewRelations+'</div></div>':'')
-      +mRow('Оцінка керівника',d.reviewScoreOcinka,10,'#7b5fe4')
-    +'</div>':'');
+    ;
   document.getElementById('emp-ov').classList.add('on');
 }
 
@@ -692,13 +634,7 @@ function onFile(inp) {
         const nd = parseXLSX(wb);
         if (nd.length) { showDiff(nd, f.name); inp.value=''; return; }
       }
-      if (wb.SheetNames.includes('План проведення атестації')) {
-        const ws = wb.Sheets['План проведення атестації'];
-        const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
-        const np = parsePlan(rows);
-        if (np.length) { PLAN=np; renderPlan(); const tb=document.querySelector('[data-tab="plan"]'); if(tb) goTab(tb); inp.value=''; return; }
-      }
-      alert('Файл не розпізнано.\nОчікується Excel-файл з аркушем «Загальна» або «План проведення атестації».');
+      alert('Файл не розпізнано.\nОчікується Excel-файл з аркушем «Загальна».');
     } catch(err) { console.error(err); alert('Помилка читання файлу: '+err.message); }
     inp.value='';
   };
@@ -862,32 +798,10 @@ function parseXLSX(wb) {
     }
   }
 
-  // ───── ВІДГУК КЕРІВНИКА ─────
-  const reviewMap = {};
-  if (wb.SheetNames.includes('Відгук керівника')) {
-    const wsR = wb.Sheets['Відгук керівника'];
-    const rRows = XLSX.utils.sheet_to_json(wsR,{header:1,defval:null,raw:true});
-    const rh = findCol(rRows, ['відносини в колективі','дисципліна','ініціативність','сильна сторона','пі працівника','рекомендація','к-сть балів','оцінка'], 1);
-    // Name column: find header containing "ПІ працівника"
-    const nameCol = rh['пі працівника']>=0 ? rh['пі працівника'] : 8;
-    for (let i=1;i<rRows.length;i++){
-      const r=rRows[i]; const n=sv(r[nameCol]); if(!n||typeof n!=='string') continue;
-      reviewMap[nk(n)] = {
-        reviewRelations:String(r[rh['відносини в колективі']>=0?rh['відносини в колективі']:1]||'').slice(0,120),
-        reviewDiscipline:String(r[rh['дисципліна']>=0?rh['дисципліна']:2]||'').slice(0,120),
-        reviewInitiative:String(r[rh['ініціативність']>=0?rh['ініціативність']:3]||'').slice(0,120),
-        reviewStrength:String(r[rh['сильна сторона']>=0?rh['сильна сторона']:7]||'').slice(0,60),
-        reviewRecommendation:String(r[rh['рекомендація']>=0?rh['рекомендація']:9]||'').slice(0,80),
-        reviewScorePts:num(r[rh['к-сть балів']>=0?rh['к-сть балів']:10]),
-        reviewScoreOcinka:num(r[rh['оцінка']>=0?rh['оцінка']:11]),
-      };
-    }
-  }
-
   // ───── MERGE ─────
   const merged = enrich(result).map(e => {
     const k = nk(e.name);
-    const extra = Object.assign({}, kpiMap[k]||{}, chatsMap[k]||{}, inbMap[k]||{}, koshykMap[k]||{}, reviewMap[k]||{});
+    const extra = Object.assign({}, kpiMap[k]||{}, chatsMap[k]||{}, inbMap[k]||{}, koshykMap[k]||{});
     const out = Object.assign({}, e, extra);
     if (!out.managerScore && out.reviewScoreOcinka) out.managerScore = out.reviewScoreOcinka;
     // re-run enrich-derived fields since extra fields don't affect qaAvg/testSum/result, but result depends on totalScore which is unchanged
@@ -895,28 +809,6 @@ function parseXLSX(wb) {
   });
 
   return merged;
-}
-function parsePlan(rows) {
-  const fmtDate = v => {
-    if (v==null) return '';
-    if (v instanceof Date) return v.toLocaleDateString('uk-UA');
-    const s = String(v).trim();
-    const d = new Date(s);
-    if (!isNaN(d.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(s)) return d.toLocaleDateString('uk-UA');
-    return s.slice(0,10);
-  };
-  const res=[]; let hi=-1, ci=-1;
-  for(let i=0;i<Math.min(5,rows.length);i++){
-    if(!rows[i]) continue;
-    const idx = rows[i].findIndex(c=>String(c||'').trim()==='Етап');
-    if (idx>=0) { hi=i; ci=idx; break; }
-  }
-  if(hi<0) return [];
-  for(let i=hi+1;i<rows.length;i++){
-    const r=rows[i]; const s=String(r[ci]||'').trim(); if(!s)continue;
-    res.push({stage:s,owner:String(r[ci+1]||'').trim(),start:fmtDate(r[ci+2]),deadline:fmtDate(r[ci+3]),status:String(r[ci+4]||'').trim(),comment:String(r[ci+5]||'').trim()});
-  }
-  return res;
 }
 function showDiff(nd, fn) {
   const om=new Map(ALL.map(d=>[d.email||d.name,d]));
@@ -969,8 +861,8 @@ function openChangelog() {
 
 /* ─── EXPORT ─── */
 function exportCSV() {
-  const h=['Імя','Команда','Посада','Прийом','Стаж(міс)','Бал КПІ','Тест1','Тест2','Тест3','Тест4','Тест5','Тест6','∑Тести','КЯ Лін','КЯ Чат','КЯ Зам','КЯ сер','Чатів','Зам.з чатів','Конв.чат%','Вхідних','Зам.з дзв','Конв.вхід%','Всього зам','Успішних','%Успіх','%Відмов','Скло%','BlackSide%','Блоки%','Чохли%','ДГ%','Бал КПІ(таб)','Відгук','Сила','Рекомендація','Заг.бал','Результат'];
-  const rows=FIL.map(d=>[d.name,d.supervisor,d.position,d.hireDate,d.tenureMonths,d.kpiBal,d.test1,d.test2,d.test3,d.test4,d.test5,d.test6,d.testSum,d.qaLine,d.qaChat,d.qaOrder,d.qaAvg,d.totalChats,d.ordersFromChats,d.convChat,d.inboundCalls,d.ordersFromCalls,d.convInbound,d.totalOrders,d.successOrders,d.successPct,d.cancelPct,d.kpiGlass,d.kpiBlackSide,d.kpiBlocks,d.kpiCase,d.kpiDG,d.kpiBal_kpi,d.managerScore,d.reviewStrength,d.reviewRecommendation,d.totalScore,rText(d.result)]);
+  const h=['Імя','Команда','Посада','Прийом','Стаж(міс)','Бал КПІ','Тест1','Тест2','Тест3','Тест4','Тест5','Тест6','∑Тести','КЯ Лін','КЯ Чат','КЯ Зам','КЯ сер','Чатів','Зам.з чатів','Конв.чат%','Вхідних','Зам.з дзв','Конв.вхід%','Всього зам','Успішних','%Успіх','%Відмов','Скло%','BlackSide%','Блоки%','Чохли%','ДГ%','Бал КПІ(таб)','Заг.бал','Результат'];
+  const rows=FIL.map(d=>[d.name,d.supervisor,d.position,d.hireDate,d.tenureMonths,d.kpiBal,d.test1,d.test2,d.test3,d.test4,d.test5,d.test6,d.testSum,d.qaLine,d.qaChat,d.qaOrder,d.qaAvg,d.totalChats,d.ordersFromChats,d.convChat,d.inboundCalls,d.ordersFromCalls,d.convInbound,d.totalOrders,d.successOrders,d.successPct,d.cancelPct,d.kpiGlass,d.kpiBlackSide,d.kpiBlocks,d.kpiCase,d.kpiDG,d.kpiBal_kpi,d.totalScore,rText(d.result)]);
   const csv=[h,...rows].map(r=>r.map(v=>v==null?'':(String(v).includes(',')?'"'+v+'"':v)).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));a.download='attestation_export.csv';a.click();
 }

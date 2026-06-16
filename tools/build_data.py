@@ -280,80 +280,6 @@ def parse_basket(wb):
         }
     return out
 
-def parse_review(wb):
-    out = {}
-    if 'Відгук керівника' not in wb.sheetnames:
-        return out
-    rows = sheet_rows(wb['Відгук керівника'])
-    matchers = ['відносини в колективі','дисципліна','ініціативність','сильна сторона',
-                 'пі працівника','рекомендація','к-сть балів','оцінка']
-    rh = find_col(rows, matchers, 1)
-    name_col = rh['пі працівника'] if rh['пі працівника'] >= 0 else 8
-    for i in range(1, len(rows)):
-        r = rows[i]
-        n = sv(r[name_col]) if name_col < len(r) else None
-        if not n or not isinstance(n, str):
-            continue
-        def g(key, default):
-            idx = rh[key] if rh[key] >= 0 else default
-            return r[idx] if idx < len(r) else None
-        out[nk(n)] = {
-            'reviewRelations': str(g('відносини в колективі', 1) or '')[:120],
-            'reviewDiscipline': str(g('дисципліна', 2) or '')[:120],
-            'reviewInitiative': str(g('ініціативність', 3) or '')[:120],
-            'reviewStrength': str(g('сильна сторона', 7) or '')[:60],
-            'reviewRecommendation': str(g('рекомендація', 9) or '')[:80],
-            'reviewScorePts': num(g('к-сть балів', 10)),
-            'reviewScoreOcinka': num(g('оцінка', 11)),
-        }
-    return out
-
-def parse_plan(wb):
-    if 'План проведення атестації' not in wb.sheetnames:
-        return []
-    rows = sheet_rows(wb['План проведення атестації'])
-
-    def fmt_date(v):
-        if v is None:
-            return ''
-        if isinstance(v, datetime):
-            return v.strftime('%d.%m.%Y')
-        s = str(v).strip()
-        if re.match(r'^\d{4}-\d{2}-\d{2}', s):
-            try:
-                return datetime.fromisoformat(s[:10]).strftime('%d.%m.%Y')
-            except ValueError:
-                pass
-        return s[:10]
-
-    hi, ci = -1, -1
-    for i in range(min(5, len(rows))):
-        row = rows[i] or []
-        for idx, c in enumerate(row):
-            if str(c or '').strip() == 'Етап':
-                hi, ci = i, idx
-                break
-        if hi >= 0:
-            break
-    if hi < 0:
-        return []
-
-    out = []
-    for i in range(hi + 1, len(rows)):
-        r = rows[i]
-        s = str(r[ci] or '').strip() if ci < len(r) else ''
-        if not s:
-            continue
-        cell = lambda off: r[ci + off] if ci + off < len(r) else None
-        out.append({
-            'stage': s,
-            'owner': str(cell(1) or '').strip(),
-            'start': fmt_date(cell(2)),
-            'deadline': fmt_date(cell(3)),
-            'status': str(cell(4) or '').strip(),
-            'comment': str(cell(5) or '').strip(),
-        })
-    return out
 
 def main():
     if len(sys.argv) != 2:
@@ -367,17 +293,14 @@ def main():
     chats = parse_chats(wb)
     inbound = parse_inbound(wb)
     basket = parse_basket(wb)
-    review = parse_review(wb)
-    plan = parse_plan(wb)
+
 
     merged = enrich(general)
     for rec in merged:
         k = nk(rec['name'])
-        for src in (kpi, chats, inbound, basket, review):
+        for src in (kpi, chats, inbound, basket):
             if k in src:
                 rec.update(src[k])
-        if not rec.get('managerScore') and rec.get('reviewScoreOcinka'):
-            rec['managerScore'] = rec['reviewScoreOcinka']
         if rec.get('kpiBal') is None and rec.get('kpiBal_kpi') is not None:
             rec['kpiBal'] = rec['kpiBal_kpi']
 
@@ -396,13 +319,6 @@ def main():
     src = open(data_js_path, encoding='utf-8').read()
     src = re.sub(r"const DATA_UPDATED = '[^']*';", f"const DATA_UPDATED = '{now}';", src)
     src = re.sub(r"const SEED_B64 = '[^']*';", f"const SEED_B64 = '{seed_b64}';", src)
-
-    if plan:
-        plan_json = json.dumps(plan, ensure_ascii=False, separators=(',', ':'))
-        src = re.sub(r"const PLAN_SEED = \[.*?\];", f"const PLAN_SEED = {plan_json};", src, flags=re.DOTALL)
-        print(f'PLAN_SEED updated: {len(plan)} stages', file=sys.stderr)
-    else:
-        print('No "План проведення атестації" sheet found - PLAN_SEED unchanged', file=sys.stderr)
 
     open(data_js_path, 'w', encoding='utf-8').write(src)
     print(f'data.js updated. DATA_UPDATED={now}, SEED_B64 length={len(seed_b64)}', file=sys.stderr)

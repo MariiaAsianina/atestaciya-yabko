@@ -68,8 +68,6 @@
       <button class="tab"    data-tab="inbound" onclick="goTab(this)">📞 Вхідні</button>
       <button class="tab"    data-tab="orders"  onclick="goTab(this)">🛒 Кошик</button>
       <button class="tab"    data-tab="kpi"     onclick="goTab(this)">📈 КПІ</button>
-      <button class="tab"    data-tab="review"  onclick="goTab(this)">👤 Відгуки</button>
-      <button class="tab"    data-tab="plan"    onclick="goTab(this)">📅 План</button>
     </div>
 
     <!-- DASHBOARD -->
@@ -254,32 +252,6 @@
       <div class="pg" id="pg-kpi"></div>
     </div>
 
-    <!-- REVIEW -->
-    <div class="panel" id="p-review">
-      <div class="sh"><h2>👤 Відгуки керівників</h2><div class="sh-line"></div></div>
-      <div class="g2">
-        <div class="cc"><div class="cch"><div class="dot" style="background:var(--ac2)"></div>Оцінка керівника по командах</div><div class="ch" style="height:210px"><canvas id="c-rev-t"></canvas></div></div>
-        <div class="cc"><div class="cch"><div class="dot" style="background:var(--or)"></div>Розподіл рекомендацій</div><div class="ch" style="height:210px"><canvas id="c-rev-rec"></canvas></div></div>
-      </div>
-      <div class="tbar"><div class="tcnt" id="cnt-review"></div></div>
-      <div class="twrap">
-        <table id="tbl-review"><thead><tr>
-          <th data-k="name">Продавець</th><th data-k="supervisor">Команда</th><th data-k="position">Посада</th>
-          <th data-k="reviewStrength">Сильна сторона</th><th data-k="reviewRecommendation">Рекомендація</th>
-          <th data-k="reviewRelations">Відносини в колективі</th>
-          <th data-k="reviewDiscipline">Дисципліна</th><th data-k="reviewInitiative">Ініціативність</th>
-          <th data-k="reviewScorePts">Балів (сума)</th><th data-k="reviewScoreOcinka">Оцінка</th>
-        </tr></thead><tbody></tbody></table>
-      </div>
-      <div class="pg" id="pg-review"></div>
-    </div>
-
-    <!-- PLAN -->
-    <div class="panel" id="p-plan">
-      <div class="sh"><h2>📅 План проведення атестації</h2><div class="sh-line"></div></div>
-      <div class="krow k4" id="plan-kpis" style="margin-bottom:18px"></div>
-      <div id="plan-timeline"></div>
-    </div>
 
   </div>
 </div>
