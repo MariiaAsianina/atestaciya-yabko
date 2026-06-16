@@ -5,24 +5,30 @@ cd "$(dirname "$0")"
 echo "=== Оновлення сайту атестації ==="
 echo
 
-# 0. Завантажити налаштування доступу до Firebase Storage
-if [ ! -f firebase-config.sh ]; then
-  echo "ПОМИЛКА: не знайдено файл firebase-config.sh."
-  echo "Скопіюйте firebase-config.sh.example у firebase-config.sh і заповніть"
-  echo "своїми даними (інструкція в README.md)."
-  echo
-  read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
-  exit 1
-fi
-source firebase-config.sh
+# 0. Перевірити, чи налаштовано Firebase Storage
+XLSX_IN_DATA=$(ls data/*.xlsx 2>/dev/null | head -1)
 
-# 1. Встановити залежності та завантажити актуальний Excel з Firebase Storage
-echo "Завантаження актуального файлу з Firebase Storage..."
-python3 -m pip install --quiet -r tools/requirements.txt
-if ! python3 tools/fetch_excel.py; then
+if [ -f firebase-config.sh ]; then
+  source firebase-config.sh
+  echo "Завантаження актуального файлу з Firebase Storage..."
+  python3 -m pip install --quiet -r tools/requirements.txt
+  if ! python3 tools/fetch_excel.py; then
+    echo
+    echo "ПОМИЛКА: не вдалося завантажити Excel-файл з Firebase Storage (див. повідомлення вище)."
+    echo "Сайт НЕ оновлено, push не виконано."
+    echo
+    read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
+    exit 1
+  fi
+elif [ -n "$XLSX_IN_DATA" ]; then
+  echo "Firebase не налаштовано — використовується файл: $XLSX_IN_DATA"
+  echo "(Щоб перейти на Firebase Storage, налаштуйте firebase-config.sh)"
   echo
-  echo "ПОМИЛКА: не вдалося завантажити Excel-файл з Firebase Storage (див. повідомлення вище)."
-  echo "Сайт НЕ оновлено, push не виконано."
+  python3 -m pip install --quiet -r tools/requirements.txt
+else
+  echo "ПОМИЛКА: не знайдено Excel-файл."
+  echo "Покладіть файл 'Атестація Літо 2026.xlsx' у папку data/"
+  echo "або налаштуйте firebase-config.sh (інструкція в README.md)."
   echo
   read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
   exit 1
