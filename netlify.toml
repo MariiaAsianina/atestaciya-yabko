@@ -1,5 +1,5 @@
 [build]
-  command = "bash tools/netlify_build.sh"
+  command = "mkdir -p publish && cp index.html styles.css app.js data.js publish/"
   publish = "publish"
 
 [build.environment]
