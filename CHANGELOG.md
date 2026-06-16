@@ -56,4 +56,5 @@
 - 14.06.2026 18:35 · MariiaAsianina · Генерувати План атестації з Excel (PLAN_SEED)
 - 14.06.2026 18:39 · MariiaAsianina · Прибрати кнопки Історія змін та Експорт CSV, перейменувати Оновити .xlsx
 - 15.06.2026 10:32 · MariiaAsianina · Додати захист сайту паролем (екран входу)
-- 15.06.2026 12:29 · MariiaAsianina · Зберігати Excel-файл атестації у Firebase Storage замість git
+- 15.06.2026 12:35 · MariiaAsianina · Зберігати Excel-файл атестації у Firebase Storage замість git
+- 16.06.2026 11:51 · MariiaAsianina · Оновити README: інструкція з Firebase Storage та GitHub Actions
