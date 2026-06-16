@@ -15,23 +15,20 @@ jobs:
         with:
           ref: development
 
+      - name: Download Excel from Google Sheets
+        run: |
+          curl -sL "https://docs.google.com/spreadsheets/d/1_bxhv7d-ID9GqY5vYVgdknC1G8RJ4yike6ODDN_4KRY/export?format=xlsx" \
+               -o "data/Атестація Літо 2026.xlsx"
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: python3 -m pip install -r tools/requirements.txt
-
-      - name: Download Excel from Firebase Storage
-        env:
-          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-          FIREBASE_FILE_PATH: ${{ secrets.FIREBASE_FILE_PATH }}
-          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
-        run: python3 tools/fetch_excel.py
-
       - name: Generate data.js
-        run: python3 tools/build_data.py "data/Атестація Літо 2026.xlsx"
+        run: |
+          pip install --quiet openpyxl
+          python3 tools/build_data.py "data/Атестація Літо 2026.xlsx"
 
       - name: Commit and push if changed
         run: |
@@ -39,8 +36,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data.js CHANGELOG.md
           if git diff --cached --quiet; then
-            echo "Дані не змінились - нічого комітити."
+            echo "Дані не змінились."
             exit 0
           fi
-          git commit -m "Оновити дані атестації (Firebase)"
+          git commit -m "Оновити дані атестації (Google Sheets)"
           git push

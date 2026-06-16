@@ -2,58 +2,43 @@
 # Подвійний клік на цьому файлі оновлює дані атестації на сайті.
 cd "$(dirname "$0")"
 
+SHEET_ID="1_bxhv7d-ID9GqY5vYVgdknC1G8RJ4yike6ODDN_4KRY"
+XLSX_URL="https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx"
+XLSX_PATH="data/Атестація Літо 2026.xlsx"
+
 echo "=== Оновлення сайту атестації ==="
 echo
 
-# 0. Перевірити, чи налаштовано Firebase Storage
-XLSX_IN_DATA=$(ls data/*.xlsx 2>/dev/null | head -1)
-
-if [ -f firebase-config.sh ]; then
-  source firebase-config.sh
-  echo "Завантаження актуального файлу з Firebase Storage..."
-  python3 -m pip install --quiet -r tools/requirements.txt
-  if ! python3 tools/fetch_excel.py; then
-    echo
-    echo "ПОМИЛКА: не вдалося завантажити Excel-файл з Firebase Storage (див. повідомлення вище)."
-    echo "Сайт НЕ оновлено, push не виконано."
-    echo
-    read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
-    exit 1
-  fi
-elif [ -n "$XLSX_IN_DATA" ]; then
-  echo "Firebase не налаштовано — використовується файл: $XLSX_IN_DATA"
-  echo "(Щоб перейти на Firebase Storage, налаштуйте firebase-config.sh)"
+# 1. Завантажити актуальний Excel з Google Sheets
+echo "Завантаження даних з Google Sheets..."
+mkdir -p data
+if ! curl -sL "$XLSX_URL" -o "$XLSX_PATH"; then
   echo
-  python3 -m pip install --quiet -r tools/requirements.txt
-else
-  echo "ПОМИЛКА: не знайдено Excel-файл."
-  echo "Покладіть файл 'Атестація Літо 2026.xlsx' у папку data/"
-  echo "або налаштуйте firebase-config.sh (інструкція в README.md)."
+  echo "ПОМИЛКА: не вдалося завантажити файл (перевірте інтернет)."
   echo
   read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
   exit 1
 fi
-
+echo "Файл завантажено."
 echo
 
-# 2. Запустити build для генерації даних
-echo "Перевірка та генерація даних..."
-if ! bash tools/netlify_build.sh; then
+# 2. Встановити залежності та згенерувати data.js
+echo "Генерація даних..."
+python3 -m pip install --quiet openpyxl
+if ! python3 tools/build_data.py "$XLSX_PATH"; then
   echo
-  echo "ПОМИЛКА: не вдалося згенерувати дані з Excel-файлу (див. повідомлення вище)."
-  echo "Сайт НЕ оновлено, push не виконано."
+  echo "ПОМИЛКА: не вдалося обробити Excel-файл (див. повідомлення вище)."
   echo
   read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
   exit 1
 fi
-
 echo
 
 # 3. Commit і push, якщо є зміни
 git add data.js CHANGELOG.md
 
 if git diff --cached --quiet; then
-  echo "Змін немає — дані вже актуальні, оновлення не потрібне."
+  echo "Змін немає — дані вже актуальні."
   echo
   read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
   exit 0
@@ -62,7 +47,6 @@ fi
 if ! git commit -m "Оновити дані атестації" -q; then
   echo
   echo "ПОМИЛКА: не вдалося створити commit."
-  echo "Сайт НЕ оновлено, push не виконано."
   echo
   read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
   exit 1
@@ -70,8 +54,8 @@ fi
 
 if ! git push; then
   echo
-  echo "ПОМИЛКА: не вдалося виконати git push (перевірте інтернет/авторизацію GitHub)."
-  echo "Commit створено локально, але на GitHub НЕ відправлено."
+  echo "ПОМИЛКА: не вдалося виконати git push."
+  echo "Commit створено локально — відкрийте GitHub Desktop і натисніть Push origin."
   echo
   read -n 1 -s -r -p "Натисніть будь-яку клавішу для виходу..."
   exit 1
