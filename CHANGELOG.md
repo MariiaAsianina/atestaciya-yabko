@@ -59,3 +59,4 @@
 - 15.06.2026 12:35 · MariiaAsianina · Зберігати Excel-файл атестації у Firebase Storage замість git
 - 16.06.2026 11:51 · MariiaAsianina · Оновити README: інструкція з Firebase Storage та GitHub Actions
 - 16.06.2026 11:54 · MariiaAsianina · update_site.command: працювати без Firebase якщо є xlsx у data/
+- 16.06.2026 11:57 · MariiaAsianina · Оновити дані атестації
