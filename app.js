@@ -1,5 +1,5 @@
 /* ─── AUTH ─── */
-const AUTH_HASH = '4a3c40466aa83029f67cd839ba4ea80251f41ae092ce8059dd92f6d53750a851';
+const AUTH_HASH = '3d287a7c8675e6388d4db0b2858e45444c851ee58ae215c311fb12bb3de1fa24';
 async function sha256Hex(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
