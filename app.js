@@ -132,9 +132,78 @@ function resetFilters() {
   applyFilters();
 }
 
+/* ─── POSITION TRANSITION TABLE ─── */
+const POS_NAMES = ['Спеціаліст з продажів','Менеджер з продажів','Експерт (сайт)','Експерт + (сайт)'];
+const RES_TO_POS = {specialist:'Спеціаліст з продажів', manager:'Менеджер з продажів', expert:'Експерт (сайт)', expert_plus:'Експерт + (сайт)'};
+
+function renderPosTransition() {
+  const el = document.getElementById('pos-transition-body');
+  if (!el) return;
+
+  const rows = POS_NAMES.map(pos => {
+    const members = FIL.filter(d => d.position === pos);
+    const total = members.length;
+    const byResult = {};
+    members.forEach(d => {
+      const np = RES_TO_POS[d.result] || null;
+      if (!np) return;
+      byResult[np] = (byResult[np] || 0) + 1;
+    });
+    return { pos, total, byResult };
+  }).filter(r => r.total > 0);
+
+  const afterCounts = {};
+  POS_NAMES.forEach(p => { afterCounts[p] = 0; });
+  FIL.forEach(d => {
+    const np = RES_TO_POS[d.result];
+    if (np) afterCounts[np] = (afterCounts[np] || 0) + 1;
+  });
+
+  const posColor = p => p.includes('Менеджер') ? 'var(--ac)' : p.includes('Спеціаліст') ? 'var(--ac3)' : p.includes('+') ? 'var(--re)' : 'var(--ye)';
+  const posShort = p => p.includes('Менеджер') ? 'Менеджер' : p.includes('Спеціаліст') ? 'Спеціаліст' : p.includes('+') ? 'Експерт+' : 'Експерт';
+  const tag = p => `<span style="color:${posColor(p)};font-weight:600">${posShort(p)}</span>`;
+
+  let html = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+<thead><tr style="border-bottom:1px solid var(--br)">
+  <th style="text-align:left;padding:6px 10px;color:var(--t2);font-weight:500">Посада зараз</th>
+  <th style="text-align:center;padding:6px 10px;color:var(--t2);font-weight:500">Людей</th>
+  <th style="text-align:left;padding:6px 10px;color:var(--t2);font-weight:500">Після атестації (переходи)</th>
+</tr></thead><tbody>`;
+
+  rows.forEach(r => {
+    const transitions = POS_NAMES.map(np => {
+      const cnt = r.byResult[np] || 0;
+      if (!cnt) return '';
+      const arrow = POS_LEVEL[np] > POS_LEVEL[r.pos] ? '⬆' : POS_LEVEL[np] < POS_LEVEL[r.pos] ? '⬇' : '➡';
+      const arrowColor = POS_LEVEL[np] > POS_LEVEL[r.pos] ? '#34d399' : POS_LEVEL[np] < POS_LEVEL[r.pos] ? '#f07070' : '#9a9aa2';
+      return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px">
+        <span style="color:${arrowColor};font-size:11px">${arrow}</span>${tag(np)}<span style="color:var(--t2);font-size:12px">${cnt}</span></span>`;
+    }).join('');
+    html += `<tr style="border-bottom:1px solid var(--br)">
+      <td style="padding:8px 10px">${tag(r.pos)}</td>
+      <td style="padding:8px 10px;text-align:center;font-weight:600;color:var(--t1)">${r.total}</td>
+      <td style="padding:8px 10px">${transitions || '<span style="color:var(--t3)">—</span>'}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>
+<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid var(--br)">
+  <span style="color:var(--t2);font-size:12px;font-weight:500;align-self:center">Після атестації:</span>`;
+  POS_NAMES.forEach(p => {
+    const cnt = afterCounts[p] || 0;
+    if (!cnt) return;
+    html += `<span style="display:flex;align-items:center;gap:6px">
+      ${tag(p)}<span style="font-weight:700;color:var(--t1)">${cnt}</span></span>`;
+  });
+  html += `</div>`;
+
+  el.innerHTML = html;
+}
+
 /* ─── RENDER ALL ─── */
 function renderAll() {
   renderKPICards();
+  renderPosTransition();
   ['general','tests','qa','chats','inbound','orders','kpi'].forEach(t => renderTable(t));
   renderTeamsTab();
   renderCharts(activeTab);
