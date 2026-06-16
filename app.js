@@ -1,24 +1,31 @@
 /* ─── AUTH ─── */
-const AUTH_HASH = '3d287a7c8675e6388d4db0b2858e45444c851ee58ae215c311fb12bb3de1fa24';
+const AUTH_HASH_VIEW  = '3d287a7c8675e6388d4db0b2858e45444c851ee58ae215c311fb12bb3de1fa24';
+const AUTH_HASH_ADMIN = '4a3c40466aa83029f67cd839ba4ea80251f41ae092ce8059dd92f6d53750a851';
 async function sha256Hex(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
-function unlockApp() {
+function unlockApp(role) {
+  sessionStorage.setItem('atest_role', role);
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-root').style.display = '';
+  const btn = document.getElementById('btn-refresh');
+  if (btn) btn.style.display = role === 'admin' ? '' : 'none';
   init();
 }
 async function checkLogin() {
   const pass = document.getElementById('login-pass').value;
-  if (await sha256Hex(pass) === AUTH_HASH) {
-    sessionStorage.setItem('atest_auth', '1');
-    unlockApp();
+  const h = await sha256Hex(pass);
+  if (h === AUTH_HASH_ADMIN) {
+    unlockApp('admin');
+  } else if (h === AUTH_HASH_VIEW) {
+    unlockApp('view');
   } else {
     document.getElementById('login-error').classList.add('on');
   }
 }
-if (sessionStorage.getItem('atest_auth') === '1') unlockApp();
+const _savedRole = sessionStorage.getItem('atest_role');
+if (_savedRole) unlockApp(_savedRole);
 else document.getElementById('login-pass').focus();
 
 const APP_VERSION = 'v1.2';
