@@ -65,6 +65,17 @@ const TP = {general:1,tests:1,qa:1,chats:1,inbound:1,orders:1,kpi:1,teams:1};
 const CI = {};
 
 /* ─── INIT ─── */
+const LS_DATA_KEY = 'atest_live_data';
+const LS_TIME_KEY = 'atest_live_time';
+
+function applyLiveData(data, timestamp) {
+  ALL = data;
+  const metaEl = document.getElementById('meta');
+  if (metaEl) metaEl.textContent = 'Атестація Літо 2026 · ' + ALL.length + ' співробітників · Оновлено: ' + timestamp;
+  buildFilters();
+  applyFilters();
+}
+
 async function init() {
   const dec = async b64 => {
     const bin = atob(b64), buf = new Uint8Array(bin.length);
@@ -81,12 +92,39 @@ async function init() {
     ALL = enrich(raw);
     TESTS = tests;
   } catch(e) { console.error('Decompress error:', e); ALL = []; }
+
+  // check if admin updated data in another tab
+  try {
+    const lsRaw = localStorage.getItem(LS_DATA_KEY);
+    const lsTime = localStorage.getItem(LS_TIME_KEY);
+    if (lsRaw && lsTime) {
+      const lsData = JSON.parse(lsRaw);
+      if (lsData.length) { ALL = lsData; }
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('meta').textContent = 'Атестація Літо 2026 · ' + ALL.length + ' співробітників · Оновлено: ' + lsTime;
+      document.getElementById('ver').textContent = 'Версія ' + APP_VERSION + ' · оновлено ' + APP_VERSION_DATE;
+      buildFilters(); applyFilters();
+      return;
+    }
+  } catch(e) {}
+
   document.getElementById('loading').style.display = 'none';
   document.getElementById('meta').textContent = 'Атестація Літо 2026 · ' + ALL.length + ' співробітників · Оновлено: ' + DATA_UPDATED;
   document.getElementById('ver').textContent = 'Версія ' + APP_VERSION + ' · оновлено ' + APP_VERSION_DATE;
   buildFilters();
   applyFilters();
 }
+
+// auto-sync when admin updates data in another tab
+window.addEventListener('storage', e => {
+  if (e.key === LS_DATA_KEY && e.newValue) {
+    try {
+      const lsData = JSON.parse(e.newValue);
+      const lsTime = localStorage.getItem(LS_TIME_KEY) || '';
+      if (lsData.length) applyLiveData(lsData, lsTime);
+    } catch(err) {}
+  }
+});
 
 function enrich(raw) {
   return raw.map((r, i) => {
@@ -714,12 +752,12 @@ async function refreshFromSheets() {
     if (!wb.SheetNames.includes('Загальна')) throw new Error('Аркуш «Загальна» не знайдено');
     const nd = parseXLSX(wb);
     if (!nd.length) throw new Error('Дані не знайдено');
-    ALL = nd;
-    buildFilters();
-    applyFilters();
     const now = new Date().toLocaleString('uk-UA', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const metaEl = document.getElementById('meta');
-    if (metaEl) metaEl.textContent = 'Атестація Літо 2026 · ' + ALL.length + ' співробітників · Оновлено: ' + now;
+    try {
+      localStorage.setItem(LS_DATA_KEY, JSON.stringify(nd));
+      localStorage.setItem(LS_TIME_KEY, now);
+    } catch(e) {}
+    applyLiveData(nd, now);
     btn.textContent = '✅ Оновлено';
     setTimeout(() => { btn.textContent = '🔄 Оновити дані'; btn.disabled = false; }, 2000);
   } catch(err) {
