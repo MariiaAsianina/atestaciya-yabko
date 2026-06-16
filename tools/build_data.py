@@ -378,6 +378,8 @@ def main():
                 rec.update(src[k])
         if not rec.get('managerScore') and rec.get('reviewScoreOcinka'):
             rec['managerScore'] = rec['reviewScoreOcinka']
+        if rec.get('kpiBal') is None and rec.get('kpiBal_kpi') is not None:
+            rec['kpiBal'] = rec['kpiBal_kpi']
 
     print(f'Parsed {len(merged)} employees', file=sys.stderr)
     none_count = sum(1 for r in merged if r['result'] == 'none')
