@@ -68,16 +68,16 @@ def find_col(rows, matchers, max_row):
                     results[m] = c
     return results
 
-def calc_res(pos, sc):
-    if sc is None:
+FEEDBACK_MAP = {
+    'підвищення посади': 'promote',
+    'розвивати для подальшого підвищення': 'grow',
+    'розвивати в межах поточної посади': 'stay',
+}
+
+def calc_res(feedback):
+    if not feedback:
         return 'none'
-    if sc >= 80:
-        return 'expert_plus'
-    if sc >= 70:
-        return 'expert'
-    if sc >= 65:
-        return 'manager'
-    return 'specialist'
+    return FEEDBACK_MAP.get(str(feedback).strip().lower(), 'none')
 
 def enrich(raw):
     out = []
@@ -89,7 +89,7 @@ def enrich(raw):
         rec = dict(r)
         rec['qaAvg'] = qaAvg
         rec['testSum'] = testSum
-        rec['result'] = calc_res(rec.get('position'), rec.get('totalScore'))
+        rec['result'] = calc_res(rec.get('managerFeedback'))
         rec['_id'] = rec.get('email') or (rec['name'] + '_' + str(i))
         out.append(rec)
     return out
@@ -146,7 +146,7 @@ def parse_general(wb):
             'kpOrders': num(g('к-сть замовлень', 27)),
             'managerScore': num(g('відгук керівника', 29)),
             'totalScore': num(g('заг. бал', 30)),
-            'managerFeedback': '',
+            'managerFeedback': sv(r[34]) if len(r) > 34 else '',
             'comment': '',
         })
     return result
