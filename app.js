@@ -797,7 +797,12 @@ function findCol(headerRows, matchers, maxRow) {
       const cell = String(row[c]||'').trim().toLowerCase();
       if (!cell) continue;
       matchers.forEach(m => {
-        if (results[m] === -1 && cell.includes(m.toLowerCase())) results[m] = c;
+        if (results[m] !== -1) return;
+        const ml = m.toLowerCase(), idx = cell.indexOf(ml);
+        if (idx === -1) return;
+        const end = idx + ml.length;
+        if (end < cell.length && /[a-zа-яіїєґ]/i.test(cell[end])) return;
+        results[m] = c;
       });
     }
   }

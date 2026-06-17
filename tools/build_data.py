@@ -60,12 +60,21 @@ def find_col(rows, matchers, max_row):
     for r in range(min(max_row, len(rows))):
         row = rows[r] or []
         for c, val in enumerate(row):
-            cell = cellstr(val).lower()
+            cell = cellstr(val).lower().strip()
             if not cell:
                 continue
             for m in matchers:
-                if results[m] == -1 and m.lower() in cell:
-                    results[m] = c
+                if results[m] != -1:
+                    continue
+                ml = m.lower()
+                idx = cell.find(ml)
+                if idx == -1:
+                    continue
+                end = idx + len(ml)
+                # don't match if followed by a letter (e.g. 'вхід' must not match 'вхідна')
+                if end < len(cell) and cell[end].isalpha():
+                    continue
+                results[m] = c
     return results
 
 FEEDBACK_MAP = {
