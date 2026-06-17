@@ -48,7 +48,7 @@ const RELEASES = [
 
 const THR = {'Менеджер з продажів':65,'Спеціаліст з продажів':65,'Експерт (сайт)':70,'Експерт + (сайт)':80};
 const POS_LEVEL = {'Спеціаліст з продажів':1,'Менеджер з продажів':2,'Експерт (сайт)':3,'Експерт + (сайт)':4};
-const RES_LEVEL = {stay:1, grow:2, promote:3, none:0};
+const RES_LEVEL = {specialist:1, manager:2, expert:3, oral:4, none:0};
 const C = ['#4b8cf5','#7b5fe4','#26c6a0','#f5c842','#f07070','#38bdf8','#a78bfa','#fb923c'];
 const GR = {color:'rgba(255,255,255,.06)'};
 const TK = {color:'#9a9aa2',font:{size:11}};
@@ -132,16 +132,16 @@ function enrich(raw) {
     const qaAvg = qa.length ? +(qa.reduce((a,b)=>a+b,0)/qa.length).toFixed(1) : null;
     const tests = [r.test1,r.test2,r.test3,r.test4,r.test5,r.test6].filter(v => v != null);
     const testSum = tests.length ? tests.reduce((a,b)=>a+b,0) : null;
-    const fb = r.managerFeedback || '';
-    return { ...r, qaAvg, testSum, result: calcRes(fb), _id: r.email || (r.name+'_'+i) };
+    return { ...r, qaAvg, testSum, result: calcRes(r.managerFeedback||''), _id: r.email || (r.name+'_'+i) };
   });
 }
 function calcRes(fb) {
   if (!fb) return 'none';
   const s = String(fb).trim().toLowerCase();
-  if (s === 'підвищення посади') return 'promote';
-  if (s.includes('подальшого')) return 'grow';
-  if (s.includes('поточної')) return 'stay';
+  if (s.includes('усної')) return 'oral';
+  if (s.includes('експерт')) return 'expert';
+  if (s.includes('менеджер')) return 'manager';
+  if (s.includes('спеціаліст')) return 'specialist';
   return 'none';
 }
 
@@ -160,7 +160,7 @@ function getCKed(id) { return [...document.querySelectorAll('#'+id+' input:check
 function applyFilters() {
   const q = document.getElementById('fsearch').value.toLowerCase();
   const sup = getCKed('f-sup'), pos = getCKed('f-pos');
-  const res = [...document.querySelectorAll('#sb input[value=promote],#sb input[value=grow],#sb input[value=stay],#sb input[value=none]')]
+  const res = [...document.querySelectorAll('#sb input[value=oral],#sb input[value=expert],#sb input[value=manager],#sb input[value=specialist],#sb input[value=none]')]
     .filter(e=>e.checked).map(e=>e.value);
   const car = getCKed('f-career');
   FIL = ALL.filter(d =>
@@ -181,7 +181,7 @@ function resetFilters() {
 
 /* ─── POSITION TRANSITION TABLE ─── */
 const POS_NAMES = ['Спеціаліст з продажів','Менеджер з продажів','Експерт (сайт)','Експерт + (сайт)'];
-const RES_TO_POS = {stay:'stay', grow:'grow', promote:'promote'};
+const RES_TO_POS = {specialist:'Спеціаліст з продажів', manager:'Менеджер з продажів', expert:'Експерт (сайт)', oral:'Експерт + (сайт)'};
 
 function renderPosTransition() {
   const el = document.getElementById('pos-transition-body');
@@ -264,32 +264,37 @@ function avg(arr) { return arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : 
 function sum(arr) { return arr.reduce((a,b)=>a+b,0); }
 
 function careerChange(d) {
-  if (d.result === 'promote') return 'up';
-  if (d.result === 'stay' || d.result === 'grow') return 'same';
-  return null;
+  const posLvl = POS_LEVEL[d.position], resLvl = RES_LEVEL[d.result];
+  if (posLvl == null || resLvl == null || resLvl === 0) return null;
+  if (resLvl > posLvl) return 'up';
+  if (resLvl < posLvl) return 'down';
+  return 'same';
 }
 
 function renderKPICards() {
   const sc = FIL.map(d=>d.totalScore).filter(v=>v!=null);
   const avgSc = sc.length ? +avg(sc).toFixed(1) : '—';
   const ten = FIL.map(d=>d.tenureMonths).filter(v=>v!=null);
-  const promote = FIL.filter(d=>d.result==='promote').length;
-  const grow    = FIL.filter(d=>d.result==='grow').length;
-  const stay    = FIL.filter(d=>d.result==='stay').length;
+  const oral_cnt  = FIL.filter(d=>d.result==='oral').length;
+  const exp_cnt   = FIL.filter(d=>d.result==='expert').length;
+  const mgr_cnt   = FIL.filter(d=>d.result==='manager').length;
+  const spec_cnt  = FIL.filter(d=>d.result==='specialist').length;
   document.getElementById('d-kpis').innerHTML =
     kpiCard(FIL.length, 'Співробітників', 'з '+ALL.length+' загалом', '#4b8cf5') +
     kpiCard(avgSc, 'Сер. загальний бал', 'із 100 можливих', '#f5c842') +
-    kpiCard(promote, '⬆ Підвищення посади', 'рекомендація', '#34d399') +
-    kpiCard(grow, '🌱 Розвивати (підвищення)', 'рекомендація', '#b06aff') +
-    kpiCard(stay, '➡ Розвивати (посада)', 'рекомендація', '#9a9aa2') +
+    kpiCard(oral_cnt,  '🎤 Допуск до усної', '≥ 80 балів', '#b06aff') +
+    kpiCard(exp_cnt,   '🔵 Експерт (70)',    '70–79 балів', '#4b8cf5') +
+    kpiCard(mgr_cnt,   '🟡 Менеджер (65)',   '60–69 балів', '#f5c842') +
     kpiCard(ten.length ? Math.round(avg(ten)) : '—', 'Сер. стаж', 'місяців', '#7b5fe4');
 
   const changes = FIL.map(careerChange);
   const up   = changes.filter(c=>c==='up').length;
+  const down = changes.filter(c=>c==='down').length;
   const same = changes.filter(c=>c==='same').length;
   document.getElementById('d-career').innerHTML =
     kpiCard(up,   '⬆ Підвищення посади', 'за результатами атестації', '#34d399') +
-    kpiCard(same, '➡ Залишаються на посаді', 'за результатами атестації', '#9a9aa2');
+    kpiCard(down, '⬇ Пониження посади',  'за результатами атестації', '#f07070') +
+    kpiCard(same, '➡ Підтвердження посади', 'за результатами атестації', '#9a9aa2');
 }
 
 /* ─── TABLES ─── */
@@ -409,15 +414,15 @@ function renderTeamsTab() {
     const members = FIL.filter(d=>(d.supervisor||'—')===name);
     const scores = members.map(d=>d.totalScore).filter(v=>v!=null);
     const avgSc = scores.length ? +(avg(scores)).toFixed(1) : null;
-    const promote = members.filter(d=>d.result==='promote').length;
-    const grow    = members.filter(d=>d.result==='grow').length;
-    const stay    = members.filter(d=>d.result==='stay').length;
-    const none    = members.filter(d=>d.result==='none').length;
-    const pass = promote;
-    const warn = grow;
-    const fail = stay;
-    const ep=promote, ex=grow, mg=stay, sp=0;
-    const pct = (promote+grow+stay) ? Math.round(promote/(promote+grow+stay)*100) : 0;
+    const ep   = members.filter(d=>d.result==='oral').length;
+    const ex   = members.filter(d=>d.result==='expert').length;
+    const mg   = members.filter(d=>d.result==='manager').length;
+    const sp   = members.filter(d=>d.result==='specialist').length;
+    const none = members.filter(d=>d.result==='none').length;
+    const pass = ep + ex;
+    const warn = mg;
+    const fail = sp;
+    const pct = (ep+ex+mg+sp) ? Math.round((ep+ex)/(ep+ex+mg+sp)*100) : 0;
     const avgTen = members.map(d=>d.tenureMonths).filter(v=>v!=null);
     const avgT = avgTen.length ? Math.round(avg(avgTen)) : '—';
     const qaVals = members.map(d=>d.qaAvg).filter(v=>v!=null);
@@ -596,8 +601,8 @@ function renderCharts(tab) {
 }
 
 function renderDash() {
-  const cnt = ['promote','grow','stay','none'].map(r=>FIL.filter(d=>d.result===r).length);
-  mk('c-donut',{type:'doughnut',data:{labels:['⬆ Підвищення посади','🌱 Розвивати (підвищення)','➡ Розвивати (посада)','⬜ Без оцінки'],datasets:[{data:cnt,backgroundColor:['#34d399','#b06aff','#9a9aa2','#5a6480'],borderWidth:0,hoverOffset:6}]},
+  const cnt = ['oral','expert','manager','specialist','none'].map(r=>FIL.filter(d=>d.result===r).length);
+  mk('c-donut',{type:'doughnut',data:{labels:['🎤 Допуск до усної','🔵 Експерт (70)','🟡 Менеджер (65)','🔴 Спеціаліст','⬜ Без оцінки'],datasets:[{data:cnt,backgroundColor:['#b06aff','#4b8cf5','#f5c842','#f07070','#5a6480'],borderWidth:0,hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{color:'#9a9aa2',font:{size:11},padding:10,boxWidth:12}}}}});
 
   const bins=Array(13).fill(0);
@@ -842,7 +847,7 @@ function parseXLSX(wb) {
       kpOrders:num(r[gh['к-сть замовлень']>=0?gh['к-сть замовлень']:27]),
       managerScore:num(r[gh['відгук керівника']>=0?gh['відгук керівника']:29]),
       totalScore:num(r[gh['заг. бал']>=0?gh['заг. бал']:30]),
-      managerFeedback:sv(r[34])||'',comment:'',
+      managerFeedback:sv(r[35])||'',comment:'',
     });
   }
 
@@ -1008,9 +1013,9 @@ function exportCSV() {
 }
 
 /* ─── HELPERS ─── */
-function badge(r){const m={promote:'<span class="bdg bep">⬆ Підвищення посади</span>',grow:'<span class="bdg bex">🌱 Розвивати (підвищення)</span>',stay:'<span class="bdg bmg">➡ Розвивати (посада)</span>',none:'<span class="bdg bx">— Без оцінки</span>'};return m[r]||m.none;}
-function rClr(r){return{promote:'#34d399',grow:'var(--ep)',stay:'var(--gy)',none:'var(--gy)'}[r]||'var(--gy)';}
-function rText(r){return{promote:'Підвищення посади',grow:'Розвивати (підвищення)',stay:'Розвивати (посада)',none:'Без оцінки'}[r]||'';}
+function badge(r){const m={oral:'<span class="bdg bep">🎤 Допуск до усної</span>',expert:'<span class="bdg bex">🔵 Експерт (70)</span>',manager:'<span class="bdg bmg">🟡 Менеджер (65)</span>',specialist:'<span class="bdg bsp">🔴 Спеціаліст</span>',none:'<span class="bdg bx">— Без оцінки</span>'};return m[r]||m.none;}
+function rClr(r){return{oral:'var(--ep)',expert:'var(--ac)',manager:'var(--ye)',specialist:'var(--re)',none:'var(--gy)'}[r]||'var(--gy)';}
+function rText(r){return{oral:'Допуск до усної',expert:'Експерт (70)',manager:'Менеджер (65)',specialist:'Спеціаліст',none:'Без оцінки'}[r]||'';}
 function posTag(p){if(!p)return'<span style="color:var(--t3)">—</span>';const c=p.includes('Менеджер')?'var(--ac)':p.includes('Спеціаліст')?'var(--ac3)':p.includes('+')?'var(--re)':'var(--ye)';const s=p.includes('Менеджер')?'Менеджер':p.includes('Спеціаліст')?'Спеціаліст':p.includes('+')?'Експерт+':'Експерт';return'<span style="color:'+c+';font-weight:600">'+s+'</span>';}
 function xss(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 

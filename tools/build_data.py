@@ -69,9 +69,10 @@ def find_col(rows, matchers, max_row):
     return results
 
 FEEDBACK_MAP = {
-    'підвищення посади': 'promote',
-    'розвивати для подальшого підвищення': 'grow',
-    'розвивати в межах поточної посади': 'stay',
+    'допустити до усної атестації': 'oral',
+    'експерт (70)': 'expert',
+    'менеджер (65)': 'manager',
+    'спеціаліст': 'specialist',
 }
 
 def calc_res(feedback):
@@ -146,7 +147,7 @@ def parse_general(wb):
             'kpOrders': num(g('к-сть замовлень', 27)),
             'managerScore': num(g('відгук керівника', 29)),
             'totalScore': num(g('заг. бал', 30)),
-            'managerFeedback': sv(r[34]) if len(r) > 34 else '',
+            'managerFeedback': sv(r[35]) if len(r) > 35 else '',
             'comment': '',
         })
     return result
