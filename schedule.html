@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Генератор Графіку Змін — Jabko</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#f0f2f5; --card:#fff; --br:#e0e0e0; --br2:#c8c8c8;
+  --t1:#1a1a1a; --t2:#555; --t3:#999;
+  --ac:#1976d2; --ac2:#388e3c; --ac3:#f57c00; --red:#d32f2f;
+  --sh1-bg:#dbeafe; --sh1-c:#1e40af;
+  --sh2-bg:#dcfce7; --sh2-c:#166534;
+  --sh3-bg:#ffedd5; --sh3-c:#9a3412;
+  --off-bg:#f3f4f6; --off-c:#374151;
+  --vd-bg:#fef9c3;  --vd-c:#854d0e;
+  --nv-bg:#fce7f3;  --nv-c:#9d174d;
+  --err-bg:#ffebee;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;min-height:100vh}
+
+/* ---- TOP BAR ---- */
+#topbar{background:var(--card);border-bottom:1px solid var(--br);padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;flex-wrap:wrap}
+.logo{font-size:16px;font-weight:800;color:var(--ac);white-space:nowrap}
+.logo span{color:var(--ac3)}
+.logo small{font-size:11px;font-weight:400;color:var(--t3);margin-left:6px}
+.sp{flex:1}
+select,input[type=number]{border:1px solid var(--br2);border-radius:6px;padding:6px 10px;font-size:13px;background:#fff;color:var(--t1)}
+.btn{border:none;padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;transition:opacity .15s;white-space:nowrap}
+.btn:hover{opacity:.82}
+.btn-p{background:var(--ac);color:#fff}
+.btn-g{background:var(--ac2);color:#fff}
+.btn-o{background:var(--ac3);color:#fff}
+.btn-r{background:var(--red);color:#fff}
+.btn-s{background:#fff;color:var(--t1);border:1px solid var(--br2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---- LAYOUT ---- */
+#page{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+
+/* ---- CARD ---- */
+.card{background:var(--card);border:1px solid var(--br);border-radius:10px;overflow:hidden}
+.card-head{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--br);cursor:pointer;font-weight:700;font-size:13px;user-select:none}
+.card-head:hover{background:#fafafa}
+.caret{transition:transform .2s;flex-shrink:0}
+.collapsed .caret{transform:rotate(-90deg)}
+.card-body{padding:0}
+
+/* ---- LEGEND ---- */
+#legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--card);border:1px solid var(--br);border-radius:10px;align-items:center}
+.leg{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t2)}
+.leg-sw{width:22px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.leg-sw.sh1{background:var(--sh1-bg);color:var(--sh1-c)}
+.leg-sw.sh2{background:var(--sh2-bg);color:var(--sh2-c)}
+.leg-sw.sh3{background:var(--sh3-bg);color:var(--sh3-c)}
+.leg-sw.off{background:var(--off-bg);color:var(--off-c)}
+.leg-sw.vd{background:var(--vd-bg);color:var(--vd-c)}
+.leg-sw.nv{background:var(--nv-bg);color:var(--nv-c)}
+#legend .hint{font-size:11px;color:var(--t3);margin-left:auto}
+
+/* ---- SETUP TABLE ---- */
+.setup-wrap{overflow-x:auto;max-height:380px;overflow-y:auto}
+.setup-tbl{width:100%;border-collapse:collapse}
+.setup-tbl th{background:#f5f5f5;padding:7px 10px;text-align:left;font-size:12px;font-weight:700;border-bottom:1px solid var(--br);position:sticky;top:0;z-index:2;white-space:nowrap}
+.setup-tbl td{padding:4px 8px;border-bottom:1px solid #f0f0f0;vertical-align:middle;white-space:nowrap}
+.setup-tbl tr:hover td{background:#fafafa}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.b-float{background:#e3f2fd;color:#1565c0}
+.b-fix52{background:#e8f5e9;color:#2e7d32}
+.b-sh12{background:#f3e5f5;color:#6a1b9a}
+.b-sh123{background:#e8eaf6;color:#283593}
+.mini-in{width:44px;border:1px solid var(--br2);border-radius:4px;padding:3px 5px;font-size:12px;text-align:center}
+.vac-in{width:130px;border:1px solid var(--br2);border-radius:4px;padding:3px 6px;font-size:12px}
+.emp-num{color:var(--t3);font-size:11px;width:24px;text-align:right;padding-right:6px}
+
+/* ---- GRID ---- */
+#grid-wrap{overflow:auto;max-height:calc(100vh - 240px)}
+.sched-tbl{border-collapse:collapse;min-width:100%}
+
+/* corner + frozen column */
+.th-corner{position:sticky;left:0;top:0;z-index:15;background:#f5f5f5;border:1px solid var(--br);padding:6px 10px;font-weight:700;font-size:12px;min-width:170px;white-space:nowrap}
+.th-day{position:sticky;top:0;z-index:10;background:#f5f5f5;border:1px solid var(--br);text-align:center;padding:3px 2px;font-size:11px;min-width:34px;white-space:nowrap;font-weight:700}
+.th-day.wknd{background:#fee2e2;color:#991b1b}
+.td-name{position:sticky;left:0;z-index:5;background:#fff;border:1px solid var(--br);padding:3px 8px;font-size:12px;font-weight:500;white-space:nowrap;min-width:170px;border-right:2px solid var(--br2)}
+.td-name.even{background:#fafafa}
+.td-name .emp-type{font-size:10px;color:var(--t3);font-weight:400}
+
+/* cells */
+.td-cell{border:1px solid #e5e5e5;text-align:center;width:34px;height:26px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;transition:filter .08s;vertical-align:middle;padding:0}
+.td-cell:hover{filter:brightness(.88)}
+.td-cell.sh1{background:var(--sh1-bg);color:var(--sh1-c)}
+.td-cell.sh2{background:var(--sh2-bg);color:var(--sh2-c)}
+.td-cell.sh3{background:var(--sh3-bg);color:var(--sh3-c)}
+.td-cell.shВ{background:var(--off-bg);color:var(--off-c)}
+.td-cell.shВД{background:var(--vd-bg);color:var(--vd-c)}
+.td-cell.shНВ{background:var(--nv-bg);color:var(--nv-c)}
+.td-cell.empty{background:#fff;color:#ddd}
+.td-cell.err{outline:2px solid var(--red) !important;outline-offset:-2px}
+
+/* stats rows */
+.stat-row td{background:#f9f9f9;text-align:center;font-size:11px;font-weight:700;padding:3px 2px;border:1px solid #e8e8e8}
+.stat-row .td-name{background:#f0f0f0;font-size:11px;font-weight:700}
+.stat-ok{color:var(--ac2)}
+.stat-warn{color:var(--red);background:var(--err-bg) !important}
+.stat-total-row td{background:#e8f5e9;font-size:11px;font-weight:700;border:1px solid #c8e6c9;text-align:center}
+.stat-total-row .td-name{background:#d4edda}
+
+/* ---- VALIDATION PANEL ---- */
+#val-list{padding:12px 14px;min-height:36px}
+.val-ok{color:var(--ac2);font-weight:700;padding:4px 0}
+.val-err{color:var(--red);padding:3px 0;font-size:12px;border-bottom:1px solid #ffcdd2;padding-bottom:4px;margin-bottom:2px}
+.val-warn{color:var(--ac3);padding:3px 0;font-size:12px}
+.val-section{font-weight:700;color:var(--t2);margin-top:10px;margin-bottom:4px;font-size:12px;border-bottom:1px solid var(--br);padding-bottom:4px}
+
+/* ---- CONTEXT MENU ---- */
+#ctx-menu{position:fixed;background:#fff;border:1px solid var(--br);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:500;overflow:hidden;min-width:100px}
+.ctx-item{padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.ctx-item:hover{background:#f5f5f5}
+.ctx-item .ci-sw{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+
+/* ---- MISC ---- */
+.hint-txt{font-size:11px;color:var(--t3);padding:6px 14px 10px}
+.info-bar{background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:8px 12px;font-size:12px;color:#0d47a1;margin:8px 14px}
+.info-bar b{font-weight:700}
+#loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:999;display:none;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--ac)}
+.spinner{width:32px;height:32px;border:3px solid #ddd;border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay"><div class="spinner"></div>Генерація графіку…</div>
+
+<div id="topbar">
+  <div class="logo">Jabko <span>Графік</span><small>Генератор змін</small></div>
+  <select id="sel-month" onchange="onMonthChange()">
+    <option value="1">Січень</option><option value="2">Лютий</option>
+    <option value="3">Березень</option><option value="4">Квітень</option>
+    <option value="5">Травень</option><option value="6">Червень</option>
+    <option value="7">Липень</option><option value="8">Серпень</option>
+    <option value="9">Вересень</option><option value="10">Жовтень</option>
+    <option value="11">Листопад</option><option value="12">Грудень</option>
+  </select>
+  <select id="sel-year" onchange="onMonthChange()">
+    <option value="2025">2025</option>
+    <option value="2026" selected>2026</option>
+    <option value="2027">2027</option>
+  </select>
+  <span id="month-info" style="font-size:12px;color:var(--t2)"></span>
+  <div class="sp"></div>
+  <button class="btn btn-p" onclick="generate()">⚡ Генерувати</button>
+  <button class="btn btn-s" onclick="validateSchedule()">✅ Перевірити</button>
+  <button class="btn btn-g" onclick="exportXlsx()" id="btn-export" disabled>📥 Excel</button>
+  <button class="btn btn-r" onclick="clearSchedule()">🗑 Очистити</button>
+  <a href="index.html" class="btn btn-s">← Атестація</a>
+</div>
+
+<div id="page">
+
+  <!-- LEGEND -->
+  <div id="legend">
+    <div class="leg"><div class="leg-sw sh1">1</div>1 зміна 09:00–18:00</div>
+    <div class="leg"><div class="leg-sw sh2">2</div>2 зміна 11:00–20:00</div>
+    <div class="leg"><div class="leg-sw sh3">3</div>3 зміна 13:00–22:00</div>
+    <div class="leg"><div class="leg-sw off">В</div>Вихідний</div>
+    <div class="leg"><div class="leg-sw vd">ВД</div>Відпустка</div>
+    <div class="leg"><div class="leg-sw nv">НВ</div>Неоплачувана відпустка</div>
+    <div class="hint">Ліво-клік — змінити значення &nbsp;|&nbsp; Правий клік — вибрати значення</div>
+  </div>
+
+  <!-- EMPLOYEE SETUP -->
+  <div class="card" id="setup-card">
+    <div class="card-head" onclick="toggleCard('setup-card')">
+      <svg class="caret" width="14" height="14" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      👥 Налаштування працівників
+      <span style="font-weight:400;font-size:11px;color:var(--t3);margin-left:6px">— введіть обов'язкові вихідні та відпустку</span>
+    </div>
+    <div class="card-body">
+      <div class="hint-txt">📌 Обов'язкові вихідні: введіть номери днів місяця (1–31). Відпустка: діапазони через кому, напр. <b>1-5, 20</b></div>
+      <div class="setup-wrap">
+        <table class="setup-tbl" id="setup-tbl">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Ім'я працівника</th>
+              <th>Тип</th>
+              <th>Зміни</th>
+              <th>Вих. 1</th>
+              <th>Вих. 2</th>
+              <th>Вих. 3</th>
+              <th>Відпустка (дні)</th>
+            </tr>
+          </thead>
+          <tbody id="setup-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHEDULE GRID -->
+  <div class="card">
+    <div class="card-head" style="cursor:default">
+      📅 Графік змін
+      <span id="grid-title" style="font-weight:400;font-size:11px;color:var(--t3);margin-left:6px"></span>
+    </div>
+    <div id="grid-wrap">
+      <div id="grid-empty" style="padding:40px;text-align:center;color:var(--t3)">
+        Натисніть <b>⚡ Генерувати</b> для автоматичного формування графіку,<br>
+        або заповнюйте клітинки вручну після вибору місяця.
+      </div>
+      <table class="sched-tbl" id="sched-tbl" style="display:none"></table>
+    </div>
+  </div>
+
+  <!-- VALIDATION -->
+  <div class="card" id="val-card">
+    <div class="card-head" onclick="toggleCard('val-card')">
+      <svg class="caret" width="14" height="14" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      ✅ Перевірка графіку
+    </div>
+    <div class="card-body">
+      <div id="val-list"><span style="color:var(--t3);font-size:12px">Натисніть «Перевірити» для аналізу графіку.</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu" style="display:none"></div>
+
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const MONTHS_UA = ['','Січень','Лютий','Березень','Квітень','Травень','Червень',
+                   'Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+const DAYS_UA = ['Нд','Пн','Вт','Ср','Чт','Пт','Сб'];
+
+// Monthly norms (floating schedule, from screenshot)
+const MONTH_NORMS = {
+  1:{off:10,work:21}, 2:{off:8,work:20},  3:{off:9,work:22},
+  4:{off:8,work:22},  5:{off:10,work:21}, 6:{off:8,work:22},
+  7:{off:9,work:22},  8:{off:10,work:21}, 9:{off:8,work:22},
+  10:{off:9,work:22}, 11:{off:8,work:22}, 12:{off:9,work:22},
+};
+
+const QUOTA   = {'1':40,'2':14,'3':14};
+const MAX_OFF = 35;   // max employees off same day
+const MIN_GAP = 3;    // min working days between days off
+const MAX_GAP = 5;    // max working days between days off
+
+const CELL_ORDER = ['1','2','3','В','ВД','НВ'];
+const CELL_CLASS = {'1':'sh1','2':'sh2','3':'sh3','В':'shВ','ВД':'shВД','НВ':'shНВ'};
+const CELL_COLORS= {'1':['#dbeafe','#1e40af'],'2':['#dcfce7','#166534'],'3':['#ffedd5','#9a3412'],
+                    'В':['#f3f4f6','#374151'],'ВД':['#fef9c3','#854d0e'],'НВ':['#fce7f3','#9d174d']};
+
+// ============================================================
+// EMPLOYEE DEFINITIONS
+// ============================================================
+const EMPLOYEES_DEFAULT = [
+  // Fixed 5/2 (weekends off)
+  {id:1, name:'Мазурчак Анна',              type:'fixed52',  shifts:[1,2,3]},
+  {id:2, name:'Щегельська Дарія',           type:'fixed52',  shifts:[1,2,3]},
+  // Floating, shifts 1+2 only
+  {id:3, name:'Скиба Вікторія',             type:'floating', shifts:[1,2]},
+  {id:4, name:'Лишук Максим',               type:'floating', shifts:[1,2]},
+  {id:5, name:'Ковалишин Роксолана',        type:'floating', shifts:[1,2]},
+  {id:6, name:'Пеприк Ірина',              type:'floating', shifts:[1,2]},
+  {id:7, name:'Якимів Назар',               type:'floating', shifts:[1,2]},
+  {id:8, name:'Сливка Ярина',               type:'floating', shifts:[1,2]},
+  {id:9, name:'Скиба Олександр',            type:'floating', shifts:[1,2]},
+  // Floating, all shifts
+  {id:10, name:'Ляпота Макс',              type:'floating', shifts:[1,2,3]},
+  {id:11, name:'Запривода Дар\'я',         type:'floating', shifts:[1,2,3]},
+  {id:12, name:'Асяніна Марія',            type:'floating', shifts:[1,2,3]},
+  {id:13, name:'Ворона Роман',             type:'floating', shifts:[1,2,3]},
+  {id:14, name:'Педоренко Ярослав',        type:'floating', shifts:[1,2,3]},
+  {id:15, name:'Горбкова Андріана',        type:'floating', shifts:[1,2,3]},
+  {id:16, name:'Бернацький Руслан',        type:'floating', shifts:[1,2,3]},
+  {id:17, name:'Зеленський Михайло',       type:'floating', shifts:[1,2,3]},
+  {id:18, name:'Закопайло Дар\'я',         type:'floating', shifts:[1,2,3]},
+  {id:19, name:'Козак Віталій',            type:'floating', shifts:[1,2,3]},
+  {id:20, name:'Палагутін Олександр',      type:'floating', shifts:[1,2,3]},
+  {id:21, name:'Фльонц Олена',             type:'floating', shifts:[1,2,3]},
+  {id:22, name:'Сень Юрій',                type:'floating', shifts:[1,2,3]},
+  {id:23, name:'Коваль Марта',             type:'floating', shifts:[1,2,3]},
+  {id:24, name:'Воєвудська (Ліщинська) Юлія', type:'floating', shifts:[1,2,3]},
+  {id:25, name:'Биба Вікторія',            type:'floating', shifts:[1,2,3]},
+  {id:26, name:'Бабич Юлія-Тетяна',       type:'floating', shifts:[1,2,3]},
+  {id:27, name:'Левенець Вікторія',        type:'floating', shifts:[1,2,3]},
+  {id:28, name:'Мусієвська Вікторія',      type:'floating', shifts:[1,2,3]},
+  {id:29, name:'Корнага Соломія',          type:'floating', shifts:[1,2,3]},
+  {id:30, name:'Вергун Галина',            type:'floating', shifts:[1,2,3]},
+  {id:31, name:'Булгаков Богдан',          type:'floating', shifts:[1,2,3]},
+  {id:32, name:'Кавака Вікторія',          type:'floating', shifts:[1,2,3]},
+  {id:33, name:'Чорна Василина',           type:'floating', shifts:[1,2,3]},
+  {id:34, name:'Мархівка Владислав',       type:'floating', shifts:[1,2,3]},
+  {id:35, name:'Степанюк Олександр',       type:'floating', shifts:[1,2,3]},
+  {id:36, name:'Спірідонов Павло',         type:'floating', shifts:[1,2,3]},
+  {id:37, name:'Сильвестер Остап',         type:'floating', shifts:[1,2,3]},
+  {id:38, name:'Сушко Олексій',            type:'floating', shifts:[1,2,3]},
+  {id:39, name:'Стень Вікторія',           type:'floating', shifts:[1,2,3]},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  month: new Date().getMonth() + 1,
+  year:  new Date().getFullYear() < 2026 ? 2026 : new Date().getFullYear(),
+  employees: null,   // array with mandatoryOff[], vacationDays[] added
+  schedules: null,   // schedules[empIdx][day 1-based] = value or null
+  generated: false,
+};
+
+// ============================================================
+// UTILS
+// ============================================================
+function getDaysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
+function getDow(y, m, d) { return new Date(y, m-1, d).getDay(); } // 0=Sun
+function isOff(v) { return v==='В'||v==='ВД'||v==='НВ'; }
+function isShift(v) { return v==='1'||v==='2'||v==='3'; }
+
+function parseVacation(str, daysInMonth) {
+  const days = new Set();
+  if (!str || !str.trim()) return days;
+  for (const part of str.split(',')) {
+    const t = part.trim();
+    const m = t.match(/^(\d+)-(\d+)$/);
+    if (m) {
+      for (let d = +m[1]; d <= +m[2]; d++) if (d >= 1 && d <= daysInMonth) days.add(d);
+    } else {
+      const n = parseInt(t);
+      if (!isNaN(n) && n >= 1 && n <= daysInMonth) days.add(n);
+    }
+  }
+  return days;
+}
+
+function getMandatoryOff(empIdx) {
+  const rows = document.querySelectorAll('#setup-body tr');
+  const row = rows[empIdx];
+  if (!row) return [];
+  const result = [];
+  row.querySelectorAll('.moff-in').forEach(inp => {
+    const v = parseInt(inp.value);
+    const dim = getDaysInMonth(state.year, state.month);
+    if (!isNaN(v) && v >= 1 && v <= dim) result.push(v);
+  });
+  return [...new Set(result)];
+}
+
+function getVacation(empIdx) {
+  const rows = document.querySelectorAll('#setup-body tr');
+  const row = rows[empIdx];
+  if (!row) return new Set();
+  const inp = row.querySelector('.vac-in');
+  const dim = getDaysInMonth(state.year, state.month);
+  return parseVacation(inp ? inp.value : '', dim);
+}
+
+// ============================================================
+// GENERATION ENGINE
+// ============================================================
+
+function placeOffDays(days, вNeeded, daysInMonth, dailyOff) {
+  if (вNeeded <= 0) return;
+  let placed = 0;
+
+  // Iterative greedy: find positions where consecutive working days is highest
+  // We'll do multiple passes until all в days are placed or no valid position found
+  let safety = 0;
+  while (placed < вNeeded && safety++ < 200) {
+    let bestDay = -1;
+    let bestScore = -Infinity;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (days[d] !== null) continue;
+      if ((dailyOff[d]||0) >= MAX_OFF) continue;
+
+      // Count working days since last off (В or ВД or НВ)
+      let consecBefore = 0;
+      for (let pd = d-1; pd >= 1; pd--) {
+        if (days[pd] === null || isShift(days[pd])) consecBefore++;
+        else break;
+      }
+
+      // Count working days after until next off
+      let consecAfter = 0;
+      for (let nd = d+1; nd <= daysInMonth; nd++) {
+        if (days[nd] === null || isShift(days[nd])) consecAfter++;
+        else break;
+      }
+
+      // Too close to previous В (min gap not met)
+      let workSinceLastВ = 0;
+      let foundPrevВ = false;
+      for (let pd = d-1; pd >= 1; pd--) {
+        if (days[pd] === 'В') { foundPrevВ = true; break; }
+        if (days[pd] === null || isShift(days[pd])) workSinceLastВ++;
+        else { break; } // ВД or НВ resets
+      }
+      if (foundPrevВ && workSinceLastВ < MIN_GAP) continue;
+
+      // Too close to next В
+      let workToNextВ = 0;
+      let foundNextВ = false;
+      for (let nd = d+1; nd <= daysInMonth; nd++) {
+        if (days[nd] === 'В') { foundNextВ = true; break; }
+        if (days[nd] === null || isShift(days[nd])) workToNextВ++;
+        else break;
+      }
+      if (foundNextВ && workToNextВ < MIN_GAP) continue;
+
+      // Score: prefer positions where consecutive streak is longest (approaching max)
+      const totalConsec = consecBefore + consecAfter;
+      const score = totalConsec * 100 - (dailyOff[d]||0) * 10;
+      if (score > bestScore) {
+        bestScore = score;
+        bestDay = d;
+      }
+    }
+
+    if (bestDay < 0) break; // no valid position found
+
+    days[bestDay] = 'В';
+    dailyOff[bestDay] = (dailyOff[bestDay]||0) + 1;
+    placed++;
+  }
+
+  // Force-place remaining if still needed (relax gap constraint)
+  for (let d = 1; d <= daysInMonth && placed < вNeeded; d++) {
+    if (days[d] !== null) continue;
+    if ((dailyOff[d]||0) >= MAX_OFF) continue;
+    // Still respect min gap if possible
+    let workSince = 0, foundPrev = false;
+    for (let pd = d-1; pd >= 1; pd--) {
+      if (days[pd] === 'В') { foundPrev = true; break; }
+      if (!isOff(days[pd])) workSince++;
+    }
+    if (foundPrev && workSince < 2) continue;
+    days[d] = 'В';
+    dailyOff[d] = (dailyOff[d]||0) + 1;
+    placed++;
+  }
+  // Last resort: ignore all constraints
+  for (let d = 1; d <= daysInMonth && placed < вNeeded; d++) {
+    if (days[d] !== null) continue;
+    days[d] = 'В';
+    dailyOff[d] = (dailyOff[d]||0) + 1;
+    placed++;
+  }
+}
+
+function getLastShift(days, beforeDay) {
+  for (let pd = beforeDay-1; pd >= 1; pd--) {
+    if (isShift(days[pd])) return days[pd];
+    if (isOff(days[pd])) break;
+  }
+  return null;
+}
+
+function assignShifts(days, daysInMonth, allowedShifts, dailyShiftCounts) {
+  const can3 = allowedShifts.includes(3);
+
+  // Phase 1: Day before В or ВД → shift 1
+  for (let d = 2; d <= daysInMonth; d++) {
+    if (days[d] === 'В' || days[d] === 'ВД') {
+      let pd = d - 1;
+      while (pd >= 1 && isOff(days[pd])) pd--;
+      if (pd >= 1 && days[pd] === null) {
+        days[pd] = '1';
+        dailyShiftCounts[pd]['1']++;
+      }
+    }
+  }
+
+  // Phase 2: Day after В → shift 3 (or 2 if can't do 3); adjust for quota
+  for (let d = 1; d < daysInMonth; d++) {
+    if (days[d] === 'В') {
+      let nd = d + 1;
+      while (nd <= daysInMonth && isOff(days[nd])) nd++;
+      if (nd <= daysInMonth && days[nd] === null) {
+        // Prefer shift 3 for quota, fallback to 2
+        let s;
+        if (can3) {
+          // Choose 3 unless 2 is critically short
+          const def2 = QUOTA['2'] - (dailyShiftCounts[nd]['2']||0);
+          const def3 = QUOTA['3'] - (dailyShiftCounts[nd]['3']||0);
+          s = (def2 > def3 + 5) ? '2' : '3';
+        } else {
+          s = '2';
+        }
+        days[nd] = s;
+        dailyShiftCounts[nd][s]++;
+      }
+    }
+  }
+
+  // Phase 3: Fill remaining days
+  for (let d = 1; d <= daysInMonth; d++) {
+    if (days[d] !== null) continue;
+
+    // Check previous shift (rule 7)
+    const prev = getLastShift(days, d);
+    let s;
+    if (prev === '2' || prev === '3') {
+      s = '1';
+    } else {
+      s = chooseBestShift(allowedShifts, dailyShiftCounts[d]);
+    }
+    days[d] = s;
+    dailyShiftCounts[d][s]++;
+  }
+}
+
+function chooseBestShift(allowedShifts, dayCounts) {
+  const strs = allowedShifts.map(x => x.toString());
+  // Find which are still below quota
+  const below = strs.filter(s => (dayCounts[s]||0) < QUOTA[s]);
+  const pool = below.length > 0 ? below : strs;
+  // Pick the one with highest deficit (most needed)
+  pool.sort((a,b) => {
+    const da = QUOTA[a] - (dayCounts[a]||0);
+    const db = QUOTA[b] - (dayCounts[b]||0);
+    return db - da;
+  });
+  return pool[0];
+}
+
+function generateSchedule() {
+  const month = state.month;
+  const year  = state.year;
+  const dim   = getDaysInMonth(year, month);
+  const norm  = MONTH_NORMS[month];
+  const emps  = state.employees;
+  const n     = emps.length;
+
+  // Initialize
+  const schedules = emps.map(() => new Array(dim+1).fill(null));
+  const dailyOff  = new Array(dim+1).fill(0);
+  const dailyShiftCounts = [];
+  for (let d = 0; d <= dim; d++) dailyShiftCounts.push({'1':0,'2':0,'3':0});
+
+  // Step 1: Mark fixed offs
+  for (let i = 0; i < n; i++) {
+    const emp = emps[i];
+    const days = schedules[i];
+
+    if (emp.type === 'fixed52') {
+      for (let d = 1; d <= dim; d++) {
+        const dow = getDow(year, month, d);
+        if (dow === 0 || dow === 6) { // Sun or Sat
+          days[d] = 'В';
+          dailyOff[d]++;
+        }
+      }
+    }
+
+    // Vacation days
+    for (const d of (emp.vacationDays || [])) {
+      if (d >= 1 && d <= dim && days[d] === null) {
+        days[d] = 'ВД';
+        dailyOff[d]++;
+      }
+    }
+
+    // Mandatory off days
+    for (const d of (emp.mandatoryOff || [])) {
+      if (d >= 1 && d <= dim && days[d] === null) {
+        days[d] = 'В';
+        dailyOff[d]++;
+      }
+    }
+  }
+
+  // Step 2: Place В days for floating employees
+  // Process in random order to spread days off more evenly
+  const floatIdxs = emps.map((e,i)=>i).filter(i=>emps[i].type==='floating');
+  // Shuffle for fairness
+  for (let i = floatIdxs.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [floatIdxs[i],floatIdxs[j]] = [floatIdxs[j],floatIdxs[i]];
+  }
+
+  for (const i of floatIdxs) {
+    const days = schedules[i];
+    const currentOff = days.slice(1).filter(v => isOff(v)).length;
+    const вNeeded = Math.max(0, norm.off - currentOff);
+    placeOffDays(days, вNeeded, dim, dailyOff);
+  }
+
+  // Step 3: Assign shifts
+  for (let i = 0; i < n; i++) {
+    assignShifts(schedules[i], dim, emps[i].shifts, dailyShiftCounts);
+  }
+
+  state.schedules = schedules;
+  state.generated = true;
+}
+
+// ============================================================
+// VALIDATION
+// ============================================================
+function validateSchedule() {
+  const errors = [];
+  const warnings = [];
+  if (!state.schedules) {
+    document.getElementById('val-list').innerHTML =
+      '<span style="color:var(--t3)">Спочатку згенеруйте або заповніть графік.</span>';
+    return;
+  }
+
+  const month = state.month;
+  const year  = state.year;
+  const dim   = getDaysInMonth(year, month);
+  const norm  = MONTH_NORMS[month];
+  const emps  = state.employees;
+  const scheds = state.schedules;
+
+  // Daily quota check
+  const dailyCounts = [];
+  for (let d = 0; d <= dim; d++) dailyCounts.push({'1':0,'2':0,'3':0,'off':0});
+  for (let i = 0; i < emps.length; i++) {
+    for (let d = 1; d <= dim; d++) {
+      const v = scheds[i][d];
+      if (v === '1'||v === '2'||v === '3') dailyCounts[d][v]++;
+      if (isOff(v)) dailyCounts[d].off++;
+    }
+  }
+
+  for (let d = 1; d <= dim; d++) {
+    const cnt = dailyCounts[d];
+    if (cnt['1'] < QUOTA['1']) errors.push(`День ${d}: зміна 1 — ${cnt['1']} осіб (потрібно мін. ${QUOTA['1']})`);
+    if (cnt['2'] < QUOTA['2']) warnings.push(`День ${d}: зміна 2 — ${cnt['2']} осіб (потрібно мін. ${QUOTA['2']})`);
+    if (cnt['3'] < QUOTA['3']) warnings.push(`День ${d}: зміна 3 — ${cnt['3']} осіб (потрібно мін. ${QUOTA['3']})`);
+    if (cnt.off > MAX_OFF) errors.push(`День ${d}: вихідних ${cnt.off} (максимум ${MAX_OFF})`);
+  }
+
+  // Per-employee checks
+  for (let i = 0; i < emps.length; i++) {
+    const emp = emps[i];
+    const days = scheds[i];
+    const nm = emp.name;
+
+    // Count working/off days
+    let wCount = 0, offCount = 0, nullCount = 0;
+    for (let d = 1; d <= dim; d++) {
+      const v = days[d];
+      if (isShift(v)) wCount++;
+      else if (isOff(v)) offCount++;
+      else nullCount++;
+    }
+
+    if (nullCount > 0) errors.push(`${nm}: ${nullCount} незаповнених днів`);
+
+    if (emp.type !== 'fixed52') {
+      const expected = norm.off + (emp.vacationDays||[]).length;
+      // Allow some slack
+      if (Math.abs(offCount - norm.off) > 1 && (emp.vacationDays||[]).length === 0) {
+        warnings.push(`${nm}: вихідних ${offCount} (норма ${norm.off})`);
+      }
+    }
+
+    // Rule 5: max 5 consecutive working shifts
+    let consec = 0;
+    for (let d = 1; d <= dim; d++) {
+      if (isShift(days[d])) { consec++; if (consec > 5) errors.push(`${nm}: понад 5 робочих підряд (з дня ${d-consec+1})`); }
+      else consec = 0;
+    }
+
+    // Rule 4: min 3, max 5 working days between В days
+    let lastВ = 0;
+    for (let d = 1; d <= dim; d++) {
+      if (days[d] === 'В') {
+        if (lastВ > 0) {
+          let workBetween = 0;
+          for (let wd = lastВ+1; wd < d; wd++) if (isShift(days[wd])) workBetween++;
+          if (workBetween < MIN_GAP) warnings.push(`${nm}: між вихідними день ${lastВ} та ${d} лише ${workBetween} робочих (мін. 3)`);
+          if (workBetween > MAX_GAP) warnings.push(`${nm}: між вихідними день ${lastВ} та ${d} — ${workBetween} робочих (макс. 5)`);
+        }
+        lastВ = d;
+      }
+    }
+
+    // Rule 6: day before В must be shift 1
+    for (let d = 2; d <= dim; d++) {
+      if (days[d] === 'В') {
+        let pd = d-1;
+        while (pd >= 1 && isOff(days[pd])) pd--;
+        if (pd >= 1 && isShift(days[pd]) && days[pd] !== '1') {
+          errors.push(`${nm}: день ${pd} перед вихідним (${d}) має бути 1-ша зміна (є ${days[pd]})`);
+        }
+      }
+    }
+
+    // Rule 7: after shift 2 or 3, next day must be shift 1
+    for (let d = 1; d < dim; d++) {
+      if (days[d]==='2'||days[d]==='3') {
+        let nd = d+1;
+        while (nd <= dim && isOff(days[nd])) nd++;
+        if (nd <= dim && isShift(days[nd]) && days[nd]!=='1') {
+          errors.push(`${nm}: після ${days[d]} зміни (день ${d}) наступна має бути 1-ша (є ${days[nd]})`);
+        }
+      }
+    }
+
+    // Shift restrictions
+    if (!emp.shifts.includes(3)) {
+      for (let d = 1; d <= dim; d++) {
+        if (days[d]==='3') errors.push(`${nm}: день ${d} — 3-тя зміна заборонена для цього працівника`);
+      }
+    }
+  }
+
+  // Render
+  let html = '';
+  if (errors.length === 0 && warnings.length === 0) {
+    html = '<div class="val-ok">✅ Графік не містить помилок!</div>';
+  } else {
+    if (errors.length > 0) {
+      html += `<div class="val-section">🔴 Помилки (${errors.length})</div>`;
+      html += errors.slice(0,50).map(e=>`<div class="val-err">⛔ ${e}</div>`).join('');
+      if (errors.length > 50) html += `<div style="color:var(--t3);font-size:12px">... та ще ${errors.length-50} помилок</div>`;
+    }
+    if (warnings.length > 0) {
+      html += `<div class="val-section">🟡 Попередження (${warnings.length})</div>`;
+      html += warnings.slice(0,30).map(w=>`<div class="val-warn">⚠ ${w}</div>`).join('');
+      if (warnings.length > 30) html += `<div style="color:var(--t3);font-size:12px">... та ще ${warnings.length-30} попереджень</div>`;
+    }
+  }
+  document.getElementById('val-list').innerHTML = html;
+  document.getElementById('val-card').scrollIntoView({behavior:'smooth'});
+}
+
+// ============================================================
+// UI: SETUP TABLE
+// ============================================================
+function renderSetupTable() {
+  const tbody = document.getElementById('setup-body');
+  tbody.innerHTML = '';
+  state.employees.forEach((emp, i) => {
+    const tr = document.createElement('tr');
+    const typeLabel = emp.type === 'fixed52' ? '<span class="badge b-fix52">5/2</span>' : '<span class="badge b-float">Плаваючий</span>';
+    const shiftLabel = emp.shifts.includes(3) ? '<span class="badge b-sh123">1·2·3</span>' : '<span class="badge b-sh12">1·2</span>';
+    tr.innerHTML = `
+      <td class="emp-num">${i+1}</td>
+      <td style="font-weight:500">${emp.name}</td>
+      <td>${typeLabel}</td>
+      <td>${shiftLabel}</td>
+      <td><input class="mini-in moff-in" type="number" min="1" max="31" placeholder="день" title="Обов'язковий вихідний 1"></td>
+      <td><input class="mini-in moff-in" type="number" min="1" max="31" placeholder="день" title="Обов'язковий вихідний 2"></td>
+      <td><input class="mini-in moff-in" type="number" min="1" max="31" placeholder="день" title="Обов'язковий вихідний 3"></td>
+      <td><input class="vac-in" type="text" placeholder="напр: 1-5, 15" title="Дні відпустки (номери днів або діапазони)"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// UI: SCHEDULE GRID
+// ============================================================
+function renderGrid() {
+  const month = state.month;
+  const year  = state.year;
+  const dim   = getDaysInMonth(year, month);
+  const emps  = state.employees;
+  const scheds = state.schedules;
+
+  document.getElementById('grid-empty').style.display = 'none';
+  const tbl = document.getElementById('sched-tbl');
+  tbl.style.display = '';
+  tbl.innerHTML = '';
+
+  // Build daily counts for stats
+  const dailyCounts = buildDailyCounts(dim, emps, scheds);
+
+  // Header rows
+  const thead = document.createElement('thead');
+  const trDay = document.createElement('tr');
+  const trDow = document.createElement('tr');
+
+  const thCorner1 = document.createElement('th');
+  thCorner1.className = 'th-corner';
+  thCorner1.rowSpan = 2;
+  thCorner1.textContent = `${MONTHS_UA[month]} ${year}`;
+  trDay.appendChild(thCorner1);
+
+  for (let d = 1; d <= dim; d++) {
+    const dow = getDow(year, month, d);
+    const isWknd = dow === 0 || dow === 6;
+
+    const th1 = document.createElement('th');
+    th1.className = 'th-day' + (isWknd ? ' wknd' : '');
+    th1.textContent = d;
+    trDay.appendChild(th1);
+
+    const th2 = document.createElement('th');
+    th2.className = 'th-day' + (isWknd ? ' wknd' : '');
+    th2.textContent = DAYS_UA[dow];
+    th2.style.fontSize = '10px';
+    th2.style.fontWeight = '400';
+    trDow.appendChild(th2);
+  }
+
+  thead.appendChild(trDay);
+  thead.appendChild(trDow);
+  tbl.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+
+  // Employee rows
+  for (let i = 0; i < emps.length; i++) {
+    const tr = document.createElement('tr');
+
+    const tdName = document.createElement('td');
+    tdName.className = 'td-name' + (i%2===1?' even':'');
+    tdName.innerHTML = `${emps[i].name}<div class="emp-type">${emps[i].type==='fixed52'?'5/2, ':''} ${emps[i].shifts.join('+')} зм.</div>`;
+    tr.appendChild(tdName);
+
+    for (let d = 1; d <= dim; d++) {
+      const td = document.createElement('td');
+      const v = scheds ? (scheds[i][d] || null) : null;
+      setCellValue(td, v);
+      td.dataset.emp = i;
+      td.dataset.day = d;
+      td.className = 'td-cell ' + getCellClass(v);
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+
+  // Stats rows
+  const statLabels = [
+    { key:'1', label:'Зміна 1', quota: QUOTA['1'] },
+    { key:'2', label:'Зміна 2', quota: QUOTA['2'] },
+    { key:'3', label:'Зміна 3', quota: QUOTA['3'] },
+    { key:'off', label:'Вихідні', quota: null },
+  ];
+
+  for (const {key, label, quota} of statLabels) {
+    const tr = document.createElement('tr');
+    tr.className = 'stat-row';
+    const tdN = document.createElement('td');
+    tdN.className = 'td-name';
+    tdN.textContent = label;
+    tr.appendChild(tdN);
+    for (let d = 1; d <= dim; d++) {
+      const cnt = dailyCounts[d][key];
+      const td = document.createElement('td');
+      td.textContent = cnt || '0';
+      if (quota !== null && cnt < quota) td.className = 'stat-warn';
+      else td.className = 'stat-ok';
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+
+  tbl.appendChild(tbody);
+
+  document.getElementById('grid-title').textContent = `— ${MONTHS_UA[month]} ${year}, ${dim} днів`;
+  document.getElementById('btn-export').disabled = false;
+}
+
+function buildDailyCounts(dim, emps, scheds) {
+  const counts = [];
+  for (let d = 0; d <= dim; d++) counts.push({'1':0,'2':0,'3':0,'off':0});
+  if (!scheds) return counts;
+  for (let i = 0; i < emps.length; i++) {
+    for (let d = 1; d <= dim; d++) {
+      const v = scheds[i][d];
+      if (v==='1'||v==='2'||v==='3') counts[d][v]++;
+      if (isOff(v)) counts[d].off++;
+    }
+  }
+  return counts;
+}
+
+function getCellClass(v) {
+  if (!v) return 'empty';
+  return CELL_CLASS[v] || 'empty';
+}
+
+function setCellValue(td, v) {
+  td.textContent = v || '';
+  td.className = 'td-cell ' + getCellClass(v);
+  td.dataset.val = v || '';
+}
+
+// ============================================================
+// CELL INTERACTION
+// ============================================================
+document.getElementById('sched-tbl').addEventListener('click', function(e) {
+  const td = e.target.closest('.td-cell');
+  if (!td) return;
+  hideCtxMenu();
+  const i = +td.dataset.emp;
+  const d = +td.dataset.day;
+  const cur = state.schedules[i][d] || null;
+  const idx = CELL_ORDER.indexOf(cur);
+  const next = CELL_ORDER[(idx+1) % CELL_ORDER.length];
+  state.schedules[i][d] = next;
+  td.textContent = next;
+  td.className = 'td-cell ' + getCellClass(next);
+  td.dataset.val = next;
+  updateStatsRow(d);
+});
+
+document.getElementById('sched-tbl').addEventListener('contextmenu', function(e) {
+  const td = e.target.closest('.td-cell');
+  if (!td) return;
+  e.preventDefault();
+  showCtxMenu(e.clientX, e.clientY, +td.dataset.emp, +td.dataset.day);
+});
+
+function showCtxMenu(x, y, empIdx, day) {
+  const menu = document.getElementById('ctx-menu');
+  menu.innerHTML = CELL_ORDER.map(v => {
+    const [bg, c] = CELL_COLORS[v];
+    return `<div class="ctx-item" onclick="setCellFromMenu(${empIdx},${day},'${v}')">
+      <div class="ci-sw" style="background:${bg};border:1px solid rgba(0,0,0,.1)"></div>${v}
+    </div>`;
+  }).join('') + `<div class="ctx-item" onclick="setCellFromMenu(${empIdx},${day},null)">
+    <div class="ci-sw" style="background:#fff;border:1px solid #ccc"></div>— Очистити
+  </div>`;
+  menu.style.display = 'block';
+  menu.style.left = Math.min(x, window.innerWidth - 130) + 'px';
+  menu.style.top  = Math.min(y, window.innerHeight - 250) + 'px';
+}
+
+function setCellFromMenu(empIdx, day, val) {
+  hideCtxMenu();
+  state.schedules[empIdx][day] = val;
+  // Re-find cell and update
+  const td = document.querySelector(`.td-cell[data-emp="${empIdx}"][data-day="${day}"]`);
+  if (td) {
+    td.textContent = val || '';
+    td.className = 'td-cell ' + getCellClass(val);
+    td.dataset.val = val || '';
+  }
+  updateStatsRow(day);
+}
+
+function hideCtxMenu() {
+  document.getElementById('ctx-menu').style.display = 'none';
+}
+document.addEventListener('click', hideCtxMenu);
+
+function updateStatsRow(day) {
+  const dim = getDaysInMonth(state.year, state.month);
+  const counts = buildDailyCounts(dim, state.employees, state.schedules);
+  const statKeys = ['1','2','3','off'];
+  const statRows = document.querySelectorAll('.stat-row');
+  const quotas = {'1':QUOTA['1'],'2':QUOTA['2'],'3':QUOTA['3'],'off':null};
+  statRows.forEach((tr, ri) => {
+    const key = statKeys[ri];
+    const tds = tr.querySelectorAll('td');
+    // tds[0] = name, tds[1] = day 1, etc.
+    if (tds[day]) {
+      const cnt = counts[day][key];
+      tds[day].textContent = cnt || '0';
+      const q = quotas[key];
+      if (q !== null && cnt < q) tds[day].className = 'stat-warn';
+      else tds[day].className = 'stat-ok';
+    }
+  });
+}
+
+// ============================================================
+// EXPORT TO EXCEL
+// ============================================================
+function exportXlsx() {
+  if (!state.schedules) return alert('Спочатку згенеруйте графік.');
+  const month = state.month;
+  const year  = state.year;
+  const dim   = getDaysInMonth(year, month);
+  const emps  = state.employees;
+  const scheds = state.schedules;
+
+  const wb = XLSX.utils.book_new();
+  const wsData = [];
+
+  // Header row 1: days
+  const hdr1 = ['Ім\'я / День'];
+  const hdr2 = ['Зміна/Вихідний'];
+  for (let d = 1; d <= dim; d++) {
+    hdr1.push(d);
+    hdr2.push(DAYS_UA[getDow(year, month, d)]);
+  }
+  hdr1.push('Роб.днів','Вихідних');
+  hdr2.push('','');
+  wsData.push(hdr1);
+  wsData.push(hdr2);
+
+  // Employee rows
+  for (let i = 0; i < emps.length; i++) {
+    const row = [emps[i].name];
+    let work = 0, off = 0;
+    for (let d = 1; d <= dim; d++) {
+      const v = scheds[i][d] || '';
+      row.push(v);
+      if (isShift(v)) work++;
+      if (isOff(v)) off++;
+    }
+    row.push(work, off);
+    wsData.push(row);
+  }
+
+  // Stats rows
+  const dailyCounts = buildDailyCounts(dim, emps, scheds);
+  for (const key of ['1','2','3','off']) {
+    const label = key==='off' ? 'Всього вихідних' : `Зміна ${key}`;
+    const row = [label];
+    for (let d = 1; d <= dim; d++) row.push(dailyCounts[d][key] || 0);
+    row.push('','');
+    wsData.push(row);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{wch:25}, ...Array(dim).fill({wch:5}), {wch:8},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, ws, `${MONTHS_UA[month]} ${year}`);
+  XLSX.writeFile(wb, `Графік_${MONTHS_UA[month]}_${year}.xlsx`);
+}
+
+// ============================================================
+// MAIN ACTIONS
+// ============================================================
+function generate() {
+  // Collect user inputs
+  const emps = state.employees;
+  const dim = getDaysInMonth(state.year, state.month);
+  for (let i = 0; i < emps.length; i++) {
+    emps[i].mandatoryOff = getMandatoryOff(i);
+    emps[i].vacationDays = [...getVacation(i)];
+  }
+
+  // Show loading
+  const ov = document.getElementById('loading-overlay');
+  ov.style.display = 'flex';
+
+  setTimeout(() => {
+    try {
+      generateSchedule();
+      renderGrid();
+    } catch(e) {
+      console.error(e);
+      alert('Помилка генерації: ' + e.message);
+    }
+    ov.style.display = 'none';
+  }, 50);
+}
+
+function clearSchedule() {
+  if (!confirm('Очистити весь графік?')) return;
+  const dim = getDaysInMonth(state.year, state.month);
+  const n = state.employees.length;
+  state.schedules = Array.from({length:n}, () => new Array(dim+1).fill(null));
+  state.generated = false;
+  renderGrid();
+  document.getElementById('val-list').innerHTML = '<span style="color:var(--t3);font-size:12px">Натисніть «Перевірити» для аналізу графіку.</span>';
+}
+
+function onMonthChange() {
+  state.month = +document.getElementById('sel-month').value;
+  state.year  = +document.getElementById('sel-year').value;
+  updateMonthInfo();
+
+  // Reset schedules
+  state.schedules = null;
+  state.generated = false;
+  document.getElementById('grid-empty').style.display = '';
+  document.getElementById('sched-tbl').style.display = 'none';
+  document.getElementById('btn-export').disabled = true;
+  document.getElementById('val-list').innerHTML = '<span style="color:var(--t3);font-size:12px">Натисніть «Перевірити» для аналізу графіку.</span>';
+}
+
+function updateMonthInfo() {
+  const m = state.month;
+  const y = state.year;
+  const norm = MONTH_NORMS[m];
+  const dim = getDaysInMonth(y, m);
+  document.getElementById('month-info').textContent =
+    `${dim} днів · Роб: ${norm.work} · Вих: ${norm.off}`;
+}
+
+function toggleCard(cardId) {
+  const card = document.getElementById(cardId);
+  card.classList.toggle('collapsed');
+  const body = card.querySelector('.card-body');
+  if (card.classList.contains('collapsed')) {
+    body.style.display = 'none';
+  } else {
+    body.style.display = '';
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  // Set month/year selectors
+  document.getElementById('sel-month').value = state.month;
+  document.getElementById('sel-year').value  = state.year;
+
+  // Deep copy employees
+  state.employees = EMPLOYEES_DEFAULT.map(e => ({
+    ...e,
+    shifts: [...e.shifts],
+    mandatoryOff: [],
+    vacationDays: [],
+  }));
+
+  updateMonthInfo();
+  renderSetupTable();
+}
+
+init();
+</script>
+</body>
+</html>

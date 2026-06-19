@@ -1,5 +1,5 @@
 [build]
-  command = "mkdir -p publish && cp index.html styles.css app.js data.js publish/"
+  command = "mkdir -p publish && cp index.html styles.css app.js data.js schedule.html publish/"
   publish = "publish"
 
 [build.environment]

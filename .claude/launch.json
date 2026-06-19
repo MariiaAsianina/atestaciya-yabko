@@ -2,10 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "static-site",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8090"],
+      "name": "static",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "cd /Users/office/Downloads/files && /usr/bin/python3 -m http.server 8090"],
       "port": 8090
+    },
+    {
+      "name": "schedule",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "cd /Users/office/Downloads/files && /usr/bin/python3 -m http.server 8091"],
+      "port": 8091
     }
   ]
 }
